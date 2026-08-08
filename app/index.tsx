@@ -13,7 +13,7 @@ export default function HomeScreen() {
 
       <View style={styles.content}>
         <Text variant="headlineSmall" style={styles.title}>
-          Привет, React Native Paper!
+          Привет, Ирина!
         </Text>
         <Button mode="contained" onPress={() => setSnackbarVisible(true)}>
           Нажми меня
