@@ -34,7 +34,20 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Приложению нужен доступ к фотографиям для мест.",
+          "cameraPermission": "Приложению нужна камера для фотографий мест."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Для подстановки текущих координат места."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
