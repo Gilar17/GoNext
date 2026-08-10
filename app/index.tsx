@@ -58,11 +58,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    backgroundColor: 'transparent',
   },
   composition: {
     width: '100%',

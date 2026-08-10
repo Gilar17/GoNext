@@ -48,10 +48,12 @@ export function PlaceholderScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
     padding: 24,
+    backgroundColor: 'transparent',
   },
   placeholder: {
     textAlign: 'center',
