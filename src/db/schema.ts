@@ -1,0 +1,51 @@
+export const SCHEMA_SQL = `
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS places (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  visitlater INTEGER NOT NULL DEFAULT 0,
+  liked INTEGER NOT NULL DEFAULT 0,
+  dd TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS trips (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  start_date TEXT,
+  end_date TEXT,
+  created_at TEXT NOT NULL,
+  current INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS trip_places (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trip_id INTEGER NOT NULL,
+  place_id INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL,
+  visited INTEGER NOT NULL DEFAULT 0,
+  visit_date TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
+  FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS place_photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  place_id INTEGER NOT NULL,
+  file_path TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS trip_place_photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trip_place_id INTEGER NOT NULL,
+  file_path TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (trip_place_id) REFERENCES trip_places(id) ON DELETE CASCADE
+);
+`;

@@ -1,1 +1,1 @@
-// Сервисы: геолокация, карты, файлы фото — последующие этапы.
+export { ensurePhotosDirectory, savePhotoFile, deletePhotoFile } from './photos';

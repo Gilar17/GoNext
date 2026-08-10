@@ -1,14 +1,21 @@
-/**
- * Подключение SQLite.
- * Полная инициализация схемы — в Этапе 3.
- */
 import * as SQLite from 'expo-sqlite';
 
-export function openAppDatabase(): SQLite.SQLiteDatabase {
-  return SQLite.openDatabaseSync('gonext.db');
+const DB_NAME = 'gonext.db';
+
+let database: SQLite.SQLiteDatabase | null = null;
+
+export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+  if (!database) {
+    database = await SQLite.openDatabaseAsync(DB_NAME);
+    await database.execAsync('PRAGMA foreign_keys = ON;');
+  }
+  return database;
 }
 
-/** Проверка, что модуль expo-sqlite доступен. */
+export function openAppDatabase(): SQLite.SQLiteDatabase {
+  return SQLite.openDatabaseSync(DB_NAME);
+}
+
 export function isSqliteAvailable(): boolean {
   return typeof SQLite.openDatabaseSync === 'function';
 }
