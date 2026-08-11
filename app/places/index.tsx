@@ -12,6 +12,7 @@ import { Searchbar, Snackbar, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
+import { FilterToggleButton } from '@/src/components/FilterToggleButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { listPlaces } from '@/src/db';
 import { UI } from '@/src/theme/ui';
@@ -95,6 +96,14 @@ export default function PlacesScreen() {
     });
   };
 
+  const hasActiveFilters = filterVisitLater || filterLiked;
+
+  const resetFilters = () => {
+    setFilterVisitLater(false);
+    setFilterLiked(false);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  };
+
   return (
     <View style={styles.root}>
       <ScreenScaffold
@@ -122,27 +131,36 @@ export default function PlacesScreen() {
           />
 
           <View style={styles.filters}>
-            <PrimaryButton
+            <FilterToggleButton
+              label="Посетить позже"
               icon="clock-outline"
               active={filterVisitLater}
               onPress={() => setFilterVisitLater((value) => !value)}
-              style={styles.filterButton}
-              contentStyle={styles.filterContent}
-              labelStyle={styles.filterLabel}
-            >
-              Посетить позже
-            </PrimaryButton>
-            <PrimaryButton
+            />
+            <FilterToggleButton
+              label="Понравилось"
               icon="heart"
               active={filterLiked}
               onPress={() => setFilterLiked((value) => !value)}
-              style={styles.filterButton}
-              contentStyle={styles.filterContent}
-              labelStyle={styles.filterLabel}
-            >
-              Понравилось
-            </PrimaryButton>
+            />
           </View>
+
+          {hasActiveFilters ? (
+            <Pressable
+              onPress={resetFilters}
+              style={styles.resetFilters}
+              accessibilityRole="button"
+              accessibilityLabel="Сбросить фильтры"
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={18}
+                color={UI.primary}
+                style={styles.resetIcon}
+              />
+              <Text style={styles.resetLabel}>Сбросить фильтры</Text>
+            </Pressable>
+          ) : null}
 
           {loading ? (
             <Text style={styles.message}>Загрузка…</Text>
@@ -259,21 +277,27 @@ const styles = StyleSheet.create({
   filters: {
     flexDirection: 'row',
     gap: UI.filterGap,
-    marginBottom: UI.buttonGap,
+    marginBottom: UI.filterGap,
   },
-  filterButton: {
-    flex: 1,
-  },
-  filterContent: {
-    height: UI.buttonHeight,
-    paddingHorizontal: 6,
+  resetFilters: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    height: UI.buttonHeight,
+    borderRadius: UI.buttonBorderRadius,
+    backgroundColor: UI.filterIdle,
+    marginBottom: UI.buttonGap,
+    gap: 8,
+    paddingHorizontal: 12,
   },
-  filterLabel: {
+  resetIcon: {
+    // Без абсолютного позиционирования.
+  },
+  resetLabel: {
+    color: UI.primary,
     fontSize: UI.filterLabelFontSize,
-    marginVertical: 0,
-    marginHorizontal: 0,
-    letterSpacing: 0,
+    fontWeight: '500',
   },
   listItem: {
     flexDirection: 'row',
