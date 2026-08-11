@@ -13,16 +13,17 @@ export function parseDdPair(dd: string | null | undefined): ParsedCoordinates | 
     return null;
   }
 
-  const match = dd
-    .trim()
-    .match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  const normalized = dd.trim().replace(/\s+/g, ' ');
+  const match = normalized.match(
+    /^(-?\d+(?:[.,]\d+)?)\s*,\s*(-?\d+(?:[.,]\d+)?)$/,
+  );
 
   if (!match) {
     return null;
   }
 
-  const latitude = Number(match[1]);
-  const longitude = Number(match[2]);
+  const latitude = Number(match[1].replace(',', '.'));
+  const longitude = Number(match[2].replace(',', '.'));
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;

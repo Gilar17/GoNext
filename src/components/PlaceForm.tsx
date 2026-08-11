@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -9,6 +8,7 @@ import {
 import {
   Button,
   HelperText,
+  IconButton,
   Switch,
   Text,
   TextInput,
@@ -25,7 +25,10 @@ export type PlaceFormValues = {
   dd: string;
 };
 
+export type PlaceFormMode = 'create' | 'edit';
+
 type PlaceFormProps = {
+  mode?: PlaceFormMode;
   initialValues?: Partial<PlaceFormValues>;
   existingPhotos?: PlacePhoto[];
   pendingPhotoUris?: string[];
@@ -44,6 +47,7 @@ const emptyValues: PlaceFormValues = {
 };
 
 export function PlaceForm({
+  mode = 'create',
   initialValues,
   existingPhotos = [],
   pendingPhotoUris: initialPending = [],
@@ -52,6 +56,7 @@ export function PlaceForm({
   onSubmit,
   onDeleteExistingPhoto,
 }: PlaceFormProps) {
+  const isEdit = mode === 'edit';
   const [values, setValues] = useState<PlaceFormValues>({
     ...emptyValues,
     ...initialValues,
@@ -190,28 +195,41 @@ export function PlaceForm({
           Вставьте пару из карт целиком: широта, долгота
         </HelperText>
 
-        <Button
-          mode="outlined"
-          icon="crosshairs-gps"
-          onPress={fillCurrentLocation}
-          loading={locationLoading}
-          style={styles.field}
-        >
-          Текущая геопозиция
-        </Button>
+        {isEdit ? (
+          <Button
+            mode="outlined"
+            icon="crosshairs-gps"
+            onPress={fillCurrentLocation}
+            loading={locationLoading}
+            style={styles.field}
+          >
+            Текущая геопозиция
+          </Button>
+        ) : null}
 
         <Text variant="titleMedium" style={styles.sectionTitle}>
           Фотографии
         </Text>
 
-        <View style={styles.photoActions}>
-          <Button mode="outlined" icon="image" onPress={pickPhotos}>
-            Галерея
+        {isEdit ? (
+          <View style={styles.photoActions}>
+            <Button mode="outlined" icon="image-plus" onPress={pickPhotos}>
+              Добавить фото
+            </Button>
+            <Button mode="outlined" icon="camera" onPress={takePhoto}>
+              Камера
+            </Button>
+          </View>
+        ) : (
+          <Button
+            mode="outlined"
+            icon="image-plus"
+            onPress={pickPhotos}
+            style={styles.field}
+          >
+            Добавить фото
           </Button>
-          <Button mode="outlined" icon="camera" onPress={takePhoto}>
-            Камера
-          </Button>
-        </View>
+        )}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.photosRow}>
@@ -219,26 +237,30 @@ export function PlaceForm({
               <View key={`existing-${photo.id}`} style={styles.photoWrap}>
                 <Image source={{ uri: photo.filePath }} style={styles.photo} />
                 {onDeleteExistingPhoto ? (
-                  <Pressable
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    iconColor="#fff"
                     style={styles.removePhoto}
                     onPress={() => onDeleteExistingPhoto(photo.id)}
-                  >
-                    <Text style={styles.removePhotoText}>×</Text>
-                  </Pressable>
+                  />
                 ) : null}
               </View>
             ))}
             {pendingPhotoUris.map((uri) => (
               <View key={`pending-${uri}`} style={styles.photoWrap}>
                 <Image source={{ uri }} style={styles.photo} />
-                <Pressable
+                <IconButton
+                  icon="close"
+                  size={16}
+                  iconColor="#fff"
                   style={styles.removePhoto}
                   onPress={() =>
-                    setPendingPhotoUris((prev) => prev.filter((item) => item !== uri))
+                    setPendingPhotoUris((prev) =>
+                      prev.filter((item) => item !== uri),
+                    )
                   }
-                >
-                  <Text style={styles.removePhotoText}>×</Text>
-                </Pressable>
+                />
               </View>
             ))}
           </View>
@@ -288,6 +310,7 @@ const styles = StyleSheet.create({
   },
   photoActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 12,
   },
@@ -306,19 +329,10 @@ const styles = StyleSheet.create({
   },
   removePhoto: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: -10,
+    right: -10,
+    margin: 0,
     backgroundColor: '#333',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  removePhotoText: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 18,
   },
   submit: {
     marginTop: 16,

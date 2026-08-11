@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Button, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { UI } from '@/src/theme/ui';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     textAlign: 'center',
+    color: UI.primary,
   },
   subtitle: {
     fontSize: 21,

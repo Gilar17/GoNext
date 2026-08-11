@@ -11,6 +11,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { PlacePhotoGallery } from '@/src/components/PlacePhotoGallery';
+import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { deletePlace, getPlaceById } from '@/src/db';
 import { openPlaceOnMap } from '@/src/services';
 import type { Place } from '@/src/types';
@@ -52,9 +53,14 @@ export default function PlaceDetailsScreen() {
 
   const handleOpenMap = async () => {
     try {
+      // Только сохранённые координаты place.dd — без геолокации устройства.
       await openPlaceOnMap(place?.dd ?? null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось открыть карту');
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'Для этого места не указаны корректные координаты',
+      );
     }
   };
 
@@ -68,6 +74,12 @@ export default function PlaceDetailsScreen() {
     }
   };
 
+  const openEdit = () => {
+    if (place) {
+      router.push(`/places/${place.id}/edit`);
+    }
+  };
+
   return (
     <>
       <ScreenScaffold
@@ -78,11 +90,13 @@ export default function PlaceDetailsScreen() {
             <>
               <Appbar.Action
                 icon="pencil"
-                onPress={() => router.push(`/places/${place.id}/edit`)}
+                onPress={openEdit}
+                accessibilityLabel="Изменить"
               />
               <Appbar.Action
                 icon="delete"
                 onPress={() => setDeleteVisible(true)}
+                accessibilityLabel="Удалить"
               />
             </>
           ) : null
@@ -93,7 +107,9 @@ export default function PlaceDetailsScreen() {
         ) : place ? (
           <ScrollView contentContainerStyle={styles.scroll}>
             <View style={styles.panel}>
-              <Text variant="headlineSmall">{place.name}</Text>
+              <Text variant="headlineSmall" numberOfLines={3}>
+                {place.name}
+              </Text>
 
               <Text variant="titleSmall" style={styles.label}>
                 Описание
@@ -131,15 +147,21 @@ export default function PlaceDetailsScreen() {
               </Text>
               <PlacePhotoGallery photos={place.photos} />
 
-              <Button
-                mode="contained"
-                icon="map"
+              <PrimaryButton
+                icon="pencil"
+                onPress={openEdit}
+                style={styles.editButton}
+              >
+                Изменить
+              </PrimaryButton>
+
+              <PrimaryButton
+                icon="map-marker"
                 onPress={handleOpenMap}
-                disabled={!place.dd}
                 style={styles.mapButton}
               >
                 Открыть на карте
-              </Button>
+              </PrimaryButton>
             </View>
           </ScrollView>
         ) : (
@@ -184,7 +206,10 @@ const styles = StyleSheet.create({
     marginTop: 14,
     opacity: 0.7,
   },
-  mapButton: {
+  editButton: {
     marginTop: 20,
+  },
+  mapButton: {
+    marginTop: 12,
   },
 });

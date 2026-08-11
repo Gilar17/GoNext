@@ -82,6 +82,7 @@ export default function EditPlaceScreen() {
         <Text>Загрузка…</Text>
       ) : place ? (
         <PlaceForm
+          mode="edit"
           key={place.id + place.photos.map((photo) => photo.id).join('-')}
           initialValues={{
             name: place.name,

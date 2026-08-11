@@ -7,9 +7,28 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { PaperProvider, Text } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initDatabase } from '@/src/db';
+
+function PaperIcon({
+  name,
+  color,
+  size,
+}: {
+  name: string;
+  color?: string;
+  size: number;
+}) {
+  return (
+    <MaterialCommunityIcons
+      name={name as keyof typeof MaterialCommunityIcons.glyphMap}
+      color={color}
+      size={size}
+    />
+  );
+}
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -38,7 +57,11 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider>
+      <PaperProvider
+        settings={{
+          icon: (props) => <PaperIcon {...props} />,
+        }}
+      >
         <StatusBar style="auto" />
         <ImageBackground
           source={require('../assets/backgrounds/gonext-bg.png')}

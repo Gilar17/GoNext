@@ -1,35 +1,55 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
 import {
-  Chip,
-  FAB,
-  List,
-  Searchbar,
-  Snackbar,
-  Text,
-} from 'react-native-paper';
+  FlatList,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type TextInput,
+} from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Searchbar, Snackbar, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
-import { listPlaces, searchPlacesByName } from '@/src/db';
+import { listPlaces } from '@/src/db';
+import { UI } from '@/src/theme/ui';
+import { matchesPlaceName } from '@/src/utils/search';
 import type { Place } from '@/src/types';
+
+function placeFlagsLabel(place: Place): string | null {
+  const parts = [
+    place.visitlater ? 'Посетить позже' : null,
+    place.liked ? 'Понравилось' : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
 
 export default function PlacesScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+
   const [places, setPlaces] = useState<Place[]>([]);
   const [query, setQuery] = useState('');
   const [filterVisitLater, setFilterVisitLater] = useState(false);
   const [filterLiked, setFilterLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const queryRef = useRef(query);
-  queryRef.current = query;
 
-  const loadPlaces = useCallback(async (search: string) => {
+  const searchRef = useRef<TextInput>(null);
+  const listRef = useRef<FlatList<Place>>(null);
+
+  const listMaxHeight = Math.max(
+    96,
+    windowHeight - insets.top - insets.bottom - 340,
+  );
+
+  const loadPlaces = useCallback(async () => {
     setLoading(true);
     try {
-      const data = search.trim()
-        ? await searchPlacesByName(search)
-        : await listPlaces();
+      const data = await listPlaces();
       setPlaces(data);
       setError(null);
     } catch (e) {
@@ -41,12 +61,15 @@ export default function PlacesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadPlaces(queryRef.current);
+      void loadPlaces();
     }, [loadPlaces]),
   );
 
   const filteredPlaces = useMemo(() => {
     return places.filter((place) => {
+      if (!matchesPlaceName(place.name, query)) {
+        return false;
+      }
       if (filterVisitLater && !place.visitlater) {
         return false;
       }
@@ -55,36 +78,70 @@ export default function PlacesScreen() {
       }
       return true;
     });
-  }, [places, filterVisitLater, filterLiked]);
+  }, [places, query, filterVisitLater, filterLiked]);
+
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    if (text.trim() === '') {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    requestAnimationFrame(() => {
+      searchRef.current?.focus();
+    });
+  };
 
   return (
     <View style={styles.root}>
-      <ScreenScaffold title="Места" contentStyle={styles.content}>
+      <ScreenScaffold
+        title="Места"
+        titleIcon="map-marker"
+        contentStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 8) },
+        ]}
+      >
         <View style={styles.panel}>
           <Searchbar
+            ref={searchRef}
             placeholder="Поиск по названию"
             value={query}
-            onChangeText={setQuery}
-            onSubmitEditing={() => void loadPlaces(query)}
-            onIconPress={() => void loadPlaces(query)}
+            onChangeText={handleQueryChange}
+            clearIcon="close"
+            clearAccessibilityLabel="Очистить поиск"
+            onClearIconPress={clearSearch}
+            icon="magnify"
+            iconColor={UI.onPrimary}
+            placeholderTextColor="rgba(255,255,255,0.85)"
             style={styles.search}
+            inputStyle={styles.searchInput}
           />
 
           <View style={styles.filters}>
-            <Chip
-              selected={filterVisitLater}
-              onPress={() => setFilterVisitLater((value) => !value)}
+            <PrimaryButton
               icon="clock-outline"
+              active={filterVisitLater}
+              onPress={() => setFilterVisitLater((value) => !value)}
+              style={styles.filterButton}
+              contentStyle={styles.filterContent}
+              labelStyle={styles.filterLabel}
             >
               Посетить позже
-            </Chip>
-            <Chip
-              selected={filterLiked}
-              onPress={() => setFilterLiked((value) => !value)}
+            </PrimaryButton>
+            <PrimaryButton
               icon="heart"
+              active={filterLiked}
+              onPress={() => setFilterLiked((value) => !value)}
+              style={styles.filterButton}
+              contentStyle={styles.filterContent}
+              labelStyle={styles.filterLabel}
             >
               Понравилось
-            </Chip>
+            </PrimaryButton>
           </View>
 
           {loading ? (
@@ -97,38 +154,72 @@ export default function PlacesScreen() {
             </Text>
           ) : (
             <FlatList
+              ref={listRef}
               data={filteredPlaces}
               keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={styles.list}
-              renderItem={({ item }) => (
-                <List.Item
-                  title={item.name}
-                  description={
-                    [
-                      item.visitlater ? 'Посетить позже' : null,
-                      item.liked ? 'Понравилось' : null,
-                      item.dd,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || 'Без координат'
-                  }
-                  left={(props) => <List.Icon {...props} icon="map-marker" />}
-                  right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                  onPress={() => router.push(`/places/${item.id}`)}
-                  style={styles.listItem}
-                />
-              )}
+              style={{ maxHeight: listMaxHeight }}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => {
+                const flags = placeFlagsLabel(item);
+                return (
+                  <Pressable
+                    onPress={() => router.push(`/places/${item.id}`)}
+                    style={styles.listItem}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Открыть ${item.name}`}
+                  >
+                    <MaterialCommunityIcons
+                      name="map-marker"
+                      size={24}
+                      color={UI.primary}
+                      style={styles.placeIcon}
+                    />
+                    <View style={styles.listText}>
+                      <View style={styles.titleRow}>
+                        <Text
+                          variant="titleMedium"
+                          numberOfLines={1}
+                          style={styles.placeName}
+                        >
+                          {item.name}
+                        </Text>
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={24}
+                          color={UI.primary}
+                        />
+                      </View>
+                      {item.dd ? (
+                        <Text
+                          variant="bodySmall"
+                          numberOfLines={1}
+                          style={styles.coords}
+                        >
+                          {item.dd}
+                        </Text>
+                      ) : null}
+                      {flags ? (
+                        <Text variant="bodySmall" style={styles.flags}>
+                          {flags}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              }}
             />
           )}
+
+          <PrimaryButton
+            icon="plus"
+            onPress={() => router.push('/places/new')}
+            style={styles.addButton}
+          >
+            Добавить
+          </PrimaryButton>
         </View>
       </ScreenScaffold>
-
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => router.push('/places/new')}
-        label="Добавить"
-      />
 
       <Snackbar visible={error != null} onDismiss={() => setError(null)}>
         {error}
@@ -143,39 +234,87 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   content: {
-    paddingBottom: 88,
+    paddingTop: 12,
   },
   panel: {
-    flex: 1,
+    alignSelf: 'stretch',
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 12,
   },
   search: {
-    marginBottom: 12,
+    height: UI.buttonHeight,
+    backgroundColor: UI.primary,
+    borderRadius: UI.buttonBorderRadius,
+    elevation: 0,
+    marginBottom: UI.buttonGap,
+  },
+  searchInput: {
+    minHeight: 0,
+    alignSelf: 'center',
+    color: UI.onPrimary,
+    fontSize: UI.buttonFontSize,
+    paddingLeft: 0,
   },
   filters: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
+    gap: UI.filterGap,
+    marginBottom: UI.buttonGap,
   },
-  list: {
-    paddingBottom: 8,
+  filterButton: {
+    flex: 1,
+  },
+  filterContent: {
+    height: UI.buttonHeight,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+  },
+  filterLabel: {
+    fontSize: UI.filterLabelFontSize,
+    marginVertical: 0,
+    marginHorizontal: 0,
+    letterSpacing: 0,
   },
   listItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: 8,
     backgroundColor: 'rgba(255,255,255,0.7)',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  placeIcon: {
+    marginTop: 2,
+    marginRight: UI.iconTextGap,
+  },
+  listText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  placeName: {
+    flex: 1,
+    minWidth: 0,
+  },
+  coords: {
+    color: UI.mutedText,
+    marginTop: 2,
+  },
+  flags: {
+    color: UI.mutedText,
+    marginTop: 2,
   },
   message: {
     textAlign: 'center',
-    marginTop: 24,
+    marginVertical: 16,
     opacity: 0.75,
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
+  addButton: {
+    marginTop: UI.buttonGap,
   },
 });

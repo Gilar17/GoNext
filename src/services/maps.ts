@@ -2,21 +2,27 @@ import * as Linking from 'expo-linking';
 import type { DecimalDegrees } from '@/src/types';
 import { parseDdPair } from './coordinates';
 
-/** Открывает место на карте по одной паре DD. */
+const INVALID_DD_MESSAGE =
+  'Для этого места не указаны корректные координаты';
+
+/**
+ * Открывает карту строго по сохранённой паре DD места.
+ * Не использует геолокацию устройства.
+ */
 export async function openPlaceOnMap(dd: DecimalDegrees | null): Promise<void> {
   const parsed = parseDdPair(dd);
   if (!parsed) {
-    throw new Error('Координаты места не заданы или имеют неверный формат');
+    throw new Error(INVALID_DD_MESSAGE);
   }
 
   const { latitude, longitude } = parsed;
-  const query = `${latitude},${longitude}`;
-  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  // Явно передаём сохранённые координаты места (не текущую геопозицию).
+  const geoUrl = `geo:${latitude},${longitude}?q=${latitude},${longitude}`;
+  const mapsUrl = `https://maps.google.com/maps?q=${latitude},${longitude}`;
 
-  const canOpen = await Linking.canOpenURL(url);
-  if (!canOpen) {
-    throw new Error('Не удалось открыть карту');
+  try {
+    await Linking.openURL(geoUrl);
+  } catch {
+    await Linking.openURL(mapsUrl);
   }
-
-  await Linking.openURL(url);
 }

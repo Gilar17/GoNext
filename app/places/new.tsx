@@ -35,7 +35,12 @@ export default function NewPlaceScreen() {
 
   return (
     <ScreenScaffold title="Новое место" contentStyle={styles.content}>
-      <PlaceForm submitLabel="Сохранить" saving={saving} onSubmit={handleSubmit} />
+      <PlaceForm
+        mode="create"
+        submitLabel="Сохранить"
+        saving={saving}
+        onSubmit={handleSubmit}
+      />
     </ScreenScaffold>
   );
 }
