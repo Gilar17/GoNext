@@ -3,8 +3,8 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  useWindowDimensions,
   View,
+  type LayoutChangeEvent,
   type TextInput,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -19,18 +19,16 @@ import { UI } from '@/src/theme/ui';
 import { matchesPlaceName } from '@/src/utils/search';
 import type { Place } from '@/src/types';
 
-function placeFlagsLabel(place: Place): string | null {
-  const parts = [
-    place.visitlater ? 'Посетить позже' : null,
-    place.liked ? 'Понравилось' : null,
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
+/** Те же цвета, что в карточке сохранённого места. */
+const MARK_VISIT_LATER = '#3B8F5C';
+const MARK_LIKED = '#D96B9A';
+
+/** Верхний отступ контента — нижний визуальный отступ делаем таким же. */
+const CONTENT_EDGE_GAP = 12;
 
 export default function PlacesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
 
   const [places, setPlaces] = useState<Place[]>([]);
   const [query, setQuery] = useState('');
@@ -39,12 +37,25 @@ export default function PlacesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [areaHeight, setAreaHeight] = useState(0);
+  const [topChromeHeight, setTopChromeHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(
+    UI.buttonHeight + UI.buttonGap,
+  );
+
   const searchRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<Place>>(null);
 
+  const hasActiveFilters = filterVisitLater || filterLiked;
+  const contentBottomGap = insets.bottom + CONTENT_EDGE_GAP;
+
+  /**
+   * areaHeight — фактическая высота области контента под header
+   * (уже без padding ScreenScaffold), измеряется onLayout.
+   */
   const listMaxHeight = Math.max(
     96,
-    windowHeight - insets.top - insets.bottom - 340,
+    areaHeight - topChromeHeight - footerHeight,
   );
 
   const loadPlaces = useCallback(async () => {
@@ -96,12 +107,25 @@ export default function PlacesScreen() {
     });
   };
 
-  const hasActiveFilters = filterVisitLater || filterLiked;
-
   const resetFilters = () => {
     setFilterVisitLater(false);
     setFilterLiked(false);
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  };
+
+  const onAreaLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.height);
+    setAreaHeight((prev) => (prev === next ? prev : next));
+  };
+
+  const onTopChromeLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.height);
+    setTopChromeHeight((prev) => (prev === next ? prev : next));
+  };
+
+  const onFooterLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.height);
+    setFooterHeight((prev) => (prev === next ? prev : next));
   };
 
   return (
@@ -111,131 +135,169 @@ export default function PlacesScreen() {
         titleIcon="map-marker"
         contentStyle={[
           styles.content,
-          { paddingBottom: Math.max(insets.bottom, 8) },
+          { paddingBottom: contentBottomGap },
         ]}
       >
-        <View style={styles.panel}>
-          <Searchbar
-            ref={searchRef}
-            placeholder="Поиск по названию"
-            value={query}
-            onChangeText={handleQueryChange}
-            clearIcon="close"
-            clearAccessibilityLabel="Очистить поиск"
-            onClearIconPress={clearSearch}
-            icon="magnify"
-            iconColor={UI.onPrimary}
-            placeholderTextColor="rgba(255,255,255,0.85)"
-            style={styles.search}
-            inputStyle={styles.searchInput}
-          />
-
-          <View style={styles.filters}>
-            <FilterToggleButton
-              label="Посетить позже"
-              icon="clock-outline"
-              active={filterVisitLater}
-              onPress={() => setFilterVisitLater((value) => !value)}
-            />
-            <FilterToggleButton
-              label="Понравилось"
-              icon="heart"
-              active={filterLiked}
-              onPress={() => setFilterLiked((value) => !value)}
-            />
-          </View>
-
-          {hasActiveFilters ? (
-            <Pressable
-              onPress={resetFilters}
-              style={styles.resetFilters}
-              accessibilityRole="button"
-              accessibilityLabel="Сбросить фильтры"
-            >
-              <MaterialCommunityIcons
-                name="close"
-                size={18}
-                color={UI.primary}
-                style={styles.resetIcon}
-              />
-              <Text style={styles.resetLabel}>Сбросить фильтры</Text>
-            </Pressable>
-          ) : null}
-
-          {loading ? (
-            <Text style={styles.message}>Загрузка…</Text>
-          ) : filteredPlaces.length === 0 ? (
-            <Text style={styles.message}>
-              {places.length === 0
-                ? 'Пока нет сохранённых мест'
-                : 'Ничего не найдено по текущим фильтрам'}
-            </Text>
-          ) : (
-            <FlatList
-              ref={listRef}
-              data={filteredPlaces}
-              keyExtractor={(item) => String(item.id)}
-              style={{ maxHeight: listMaxHeight }}
-              showsVerticalScrollIndicator
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => {
-                const flags = placeFlagsLabel(item);
-                return (
-                  <Pressable
-                    onPress={() => router.push(`/places/${item.id}`)}
-                    style={styles.listItem}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Открыть ${item.name}`}
-                  >
-                    <MaterialCommunityIcons
-                      name="map-marker"
-                      size={24}
-                      color={UI.primary}
-                      style={styles.placeIcon}
-                    />
-                    <View style={styles.listText}>
-                      <View style={styles.titleRow}>
-                        <Text
-                          variant="titleMedium"
-                          numberOfLines={1}
-                          style={styles.placeName}
-                        >
-                          {item.name}
-                        </Text>
-                        <MaterialCommunityIcons
-                          name="chevron-right"
-                          size={24}
-                          color={UI.primary}
-                        />
-                      </View>
-                      {item.dd ? (
-                        <Text
-                          variant="bodySmall"
-                          numberOfLines={1}
-                          style={styles.coords}
-                        >
-                          {item.dd}
-                        </Text>
-                      ) : null}
-                      {flags ? (
-                        <Text variant="bodySmall" style={styles.flags}>
-                          {flags}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              }}
-            />
-          )}
-
-          <PrimaryButton
-            icon="plus"
-            onPress={() => router.push('/places/new')}
-            style={styles.addButton}
+        <View style={styles.area} onLayout={onAreaLayout}>
+          <View
+            style={[
+              styles.panel,
+              areaHeight > 0 ? { maxHeight: areaHeight } : null,
+            ]}
           >
-            Добавить
-          </PrimaryButton>
+            <View onLayout={onTopChromeLayout}>
+              <Searchbar
+                ref={searchRef}
+                placeholder="Поиск по названию"
+                value={query}
+                onChangeText={handleQueryChange}
+                clearIcon="close"
+                clearAccessibilityLabel="Очистить поиск"
+                onClearIconPress={clearSearch}
+                icon="magnify"
+                iconColor={UI.onPrimary}
+                placeholderTextColor="rgba(255,255,255,0.85)"
+                style={styles.search}
+                inputStyle={styles.searchInput}
+              />
+
+              <View style={styles.filters}>
+                <FilterToggleButton
+                  label="Посетить позже"
+                  icon="clock-outline"
+                  active={filterVisitLater}
+                  onPress={() => setFilterVisitLater((value) => !value)}
+                />
+                <FilterToggleButton
+                  label="Понравилось"
+                  icon="heart"
+                  active={filterLiked}
+                  onPress={() => setFilterLiked((value) => !value)}
+                />
+              </View>
+
+              {hasActiveFilters ? (
+                <Pressable
+                  onPress={resetFilters}
+                  style={styles.resetFilters}
+                  accessibilityRole="button"
+                  accessibilityLabel="Сбросить фильтры"
+                >
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={18}
+                    color={UI.primary}
+                    style={styles.resetIcon}
+                  />
+                  <Text style={styles.resetLabel}>Сбросить фильтры</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {loading ? (
+              <Text style={styles.message}>Загрузка…</Text>
+            ) : filteredPlaces.length === 0 ? (
+              <Text style={styles.message}>
+                {places.length === 0
+                  ? 'Пока нет сохранённых мест'
+                  : 'Ничего не найдено по текущим фильтрам'}
+              </Text>
+            ) : (
+              <FlatList
+                ref={listRef}
+                data={filteredPlaces}
+                keyExtractor={(item) => String(item.id)}
+                style={{ maxHeight: listMaxHeight, flexGrow: 0 }}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => {
+                  const hasMarks = item.visitlater || item.liked;
+                  return (
+                    <Pressable
+                      onPress={() => router.push(`/places/${item.id}`)}
+                      style={styles.listItem}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Открыть ${item.name}`}
+                    >
+                      <MaterialCommunityIcons
+                        name="map-marker"
+                        size={24}
+                        color={UI.primary}
+                        style={styles.placeIcon}
+                      />
+                      <View style={styles.listText}>
+                        <View style={styles.titleRow}>
+                          <Text
+                            variant="titleMedium"
+                            numberOfLines={1}
+                            style={styles.placeName}
+                          >
+                            {item.name}
+                          </Text>
+                          <MaterialCommunityIcons
+                            name="chevron-right"
+                            size={24}
+                            color={UI.primary}
+                          />
+                        </View>
+                        {hasMarks ? (
+                          <View style={styles.marksRow}>
+                            {item.visitlater ? (
+                              <View style={styles.markItem}>
+                                <MaterialCommunityIcons
+                                  name="clock-outline"
+                                  size={16}
+                                  color={MARK_VISIT_LATER}
+                                />
+                                <Text
+                                  style={[
+                                    styles.markText,
+                                    { color: MARK_VISIT_LATER },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  Посетить позже
+                                </Text>
+                              </View>
+                            ) : null}
+                            {item.liked ? (
+                              <View style={styles.markItem}>
+                                <MaterialCommunityIcons
+                                  name="heart"
+                                  size={16}
+                                  color={MARK_LIKED}
+                                />
+                                <Text
+                                  style={[
+                                    styles.markText,
+                                    { color: MARK_LIKED },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  Понравилось
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            )}
+
+            <View onLayout={onFooterLayout}>
+              <PrimaryButton
+                icon="plus"
+                onPress={() => router.push('/places/new')}
+                style={styles.addButton}
+              >
+                Добавить
+              </PrimaryButton>
+            </View>
+          </View>
         </View>
       </ScreenScaffold>
 
@@ -252,7 +314,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   content: {
-    paddingTop: 12,
+    flex: 1,
+    paddingTop: CONTENT_EDGE_GAP,
+  },
+  area: {
+    flex: 1,
   },
   panel: {
     alignSelf: 'stretch',
@@ -299,6 +365,10 @@ const styles = StyleSheet.create({
     fontSize: UI.filterLabelFontSize,
     fontWeight: '500',
   },
+  listContent: {
+    flexGrow: 0,
+    paddingBottom: 4,
+  },
   listItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -325,13 +395,22 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  coords: {
-    color: UI.mutedText,
-    marginTop: 2,
+  marksRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
   },
-  flags: {
-    color: UI.mutedText,
-    marginTop: 2,
+  markItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
+  markText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   message: {
     textAlign: 'center',

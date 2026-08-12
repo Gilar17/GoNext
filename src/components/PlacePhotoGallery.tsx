@@ -16,11 +16,17 @@ import { Text } from 'react-native-paper';
 import { UI } from '@/src/theme/ui';
 import type { PlacePhoto } from '@/src/types';
 
+type PhotoItem = Pick<PlacePhoto, 'id' | 'filePath'>;
+
 type PlacePhotoGalleryProps = {
-  photos: PlacePhoto[];
+  photos: PhotoItem[];
+  onDeletePhoto?: (photoId: number) => void;
 };
 
-export function PlacePhotoGallery({ photos }: PlacePhotoGalleryProps) {
+export function PlacePhotoGallery({
+  photos,
+  onDeletePhoto,
+}: PlacePhotoGalleryProps) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [previewSession, setPreviewSession] = useState(0);
@@ -54,13 +60,27 @@ export function PlacePhotoGallery({ photos }: PlacePhotoGalleryProps) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.row}>
           {photos.map((photo, index) => (
-            <Pressable
-              key={photo.id}
-              onPress={() => openPreview(index)}
-              accessibilityLabel="Открыть фото"
-            >
-              <Image source={{ uri: photo.filePath }} style={styles.photo} />
-            </Pressable>
+            <View key={photo.id} style={styles.photoWrap}>
+              <Pressable
+                onPress={() => openPreview(index)}
+                accessibilityLabel="Открыть фото"
+              >
+                <Image source={{ uri: photo.filePath }} style={styles.photo} />
+              </Pressable>
+              {onDeletePhoto ? (
+                <Pressable
+                  style={styles.removePhoto}
+                  onPress={() => onDeletePhoto(photo.id)}
+                  accessibilityLabel="Удалить фото"
+                >
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={14}
+                    color={UI.onPrimary}
+                  />
+                </Pressable>
+              ) : null}
+            </View>
           ))}
         </View>
       </ScrollView>
@@ -132,10 +152,26 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 4,
   },
+  photoWrap: {
+    position: 'relative',
+    width: 160,
+    height: 160,
+  },
   photo: {
     width: 160,
     height: 160,
     borderRadius: 10,
+  },
+  removePhoto: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: UI.buttonBorderRadius,
+    backgroundColor: UI.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   empty: {
     opacity: 0.7,
