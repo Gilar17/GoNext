@@ -183,7 +183,7 @@ export function PlaceForm({
           />
 
           <View style={styles.switchesRow}>
-            <View style={styles.switchItem}>
+            <View style={[styles.switchItem, styles.switchItemVisitlater]}>
               <Text
                 style={styles.switchLabel}
                 numberOfLines={2}
@@ -196,7 +196,7 @@ export function PlaceForm({
                 onValueChange={(value) => update('visitlater', value)}
               />
             </View>
-            <View style={styles.switchItem}>
+            <View style={[styles.switchItem, styles.switchItemLiked]}>
               <Text
                 style={styles.switchLabelSingle}
                 numberOfLines={1}
@@ -401,34 +401,37 @@ const styles = StyleSheet.create({
   },
   switchesRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 6,
     marginBottom: 8,
     marginTop: 2,
   },
   switchItem: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 4,
     minHeight: 40,
     paddingVertical: 2,
+  },
+  switchItemVisitlater: {
+    flex: 1,
+  },
+  switchItemLiked: {
+    flex: 1.2,
   },
   switchLabel: {
     flex: 1,
     flexShrink: 1,
     minWidth: 0,
-    fontSize: 15,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 17,
     color: '#333',
   },
   /** Однострочная подпись: слово целиком, без переноса по буквам. */
   switchLabelSingle: {
-    flex: 1,
-    flexShrink: 1,
-    minWidth: 0,
-    fontSize: 15,
-    lineHeight: 19,
+    flexShrink: 0,
+    fontSize: 14,
+    lineHeight: 17,
     color: '#333',
   },
   sectionTitle: {
