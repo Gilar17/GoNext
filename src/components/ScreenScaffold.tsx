@@ -14,6 +14,8 @@ type ScreenScaffoldProps = {
   children?: ReactNode;
   showBack?: boolean;
   titleIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
+  /** Действия сразу после заголовка (не у правого края). */
+  titleTrailing?: ReactNode;
   actions?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
 };
@@ -23,6 +25,7 @@ export function ScreenScaffold({
   children,
   showBack = true,
   titleIcon,
+  titleTrailing,
   actions,
   contentStyle,
 }: ScreenScaffoldProps) {
@@ -30,7 +33,7 @@ export function ScreenScaffold({
 
   return (
     <View style={styles.container}>
-      <Appbar.Header>
+      <Appbar.Header style={styles.header}>
         {showBack ? (
           <Appbar.BackAction onPress={() => router.back()} />
         ) : null}
@@ -42,8 +45,23 @@ export function ScreenScaffold({
             style={styles.titleIcon}
           />
         ) : null}
-        <Appbar.Content title={title} titleStyle={styles.title} />
-        {actions}
+        {titleTrailing ? (
+          <>
+            <Text variant="titleLarge" style={styles.inlineTitle} numberOfLines={1}>
+              {title}
+            </Text>
+            <View style={styles.headerSpacer} />
+            {actions}
+            <View style={styles.headerOverlay} pointerEvents="box-none">
+              {titleTrailing}
+            </View>
+          </>
+        ) : (
+          <>
+            <Appbar.Content title={title} titleStyle={styles.title} />
+            {actions}
+          </>
+        )}
       </Appbar.Header>
       <View style={[styles.content, contentStyle]}>{children}</View>
     </View>
@@ -73,6 +91,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  header: {
+    position: 'relative',
+    overflow: 'visible',
+  },
   content: {
     flex: 1,
     padding: 24,
@@ -85,6 +107,19 @@ const styles = StyleSheet.create({
   },
   title: {
     marginLeft: 0,
+  },
+  inlineTitle: {
+    color: '#000000',
+    marginLeft: 0,
+    marginRight: 4,
+    alignSelf: 'center',
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'center',
   },
   placeholder: {
     textAlign: 'center',
