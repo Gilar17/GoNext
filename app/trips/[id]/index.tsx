@@ -13,9 +13,7 @@ import {
   Dialog,
   Portal,
   Snackbar,
-  Switch,
   Text,
-  TextInput,
   useTheme,
 } from 'react-native-paper';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,6 +22,7 @@ import { FilterToggleButton } from '@/src/components/FilterToggleButton';
 import { PlacePhotoGallery } from '@/src/components/PlacePhotoGallery';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
+import { TripPlaceNotesSection } from '@/src/components/TripPlaceNotesSection';
 import {
   addPlaceToTrip,
   addTripPlacePhoto,
@@ -39,10 +38,17 @@ import {
 } from '@/src/db';
 import { openPlaceOnMap } from '@/src/services';
 import {
-  primaryButtonContentStyle,
-  primaryButtonStyle,
-  UI,
-} from '@/src/theme/ui';
+  TRIP_BUTTON,
+  tripButtonTheme,
+  tripFilledButtonStyle,
+  tripFilledIconLabelStyle,
+  tripFilledLabelStyle,
+  tripButtonContentStyle,
+  tripOutlineButtonStyle,
+  tripOutlineIconLabelStyle,
+  tripOutlineLabelStyle,
+} from '@/src/theme/tripButtons';
+import { UI } from '@/src/theme/ui';
 import {
   formatDateLabel,
   formatDateTimeLabel,
@@ -53,6 +59,120 @@ const HEADER_DELETE = '#BDBDBD';
 const HEADER_ACTION_SIZE = 40;
 
 type RouteMode = 'all' | 'plan' | 'diary';
+
+type RouteActionButtonProps = {
+  label: string;
+  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
+  filled?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+};
+
+function tripIcon(name: keyof typeof MaterialCommunityIcons.glyphMap) {
+  return ({ color }: { color: string }) => (
+    <MaterialCommunityIcons
+      name={name}
+      size={TRIP_BUTTON.iconSize}
+      color={color}
+    />
+  );
+}
+
+function RouteActionButton({
+  label,
+  icon,
+  filled = false,
+  disabled = false,
+  onPress,
+}: RouteActionButtonProps) {
+  const textColor = disabled
+    ? UI.mutedText
+    : filled
+      ? UI.onPrimary
+      : UI.primary;
+
+  return (
+    <Button
+      mode={filled ? 'contained' : 'outlined'}
+      icon={icon ? tripIcon(icon) : undefined}
+      disabled={disabled}
+      onPress={onPress}
+      buttonColor={filled ? UI.primary : undefined}
+      textColor={textColor}
+      theme={tripButtonTheme}
+      style={[
+        styles.routeActionButton,
+        filled ? tripFilledButtonStyle : tripOutlineButtonStyle,
+        disabled ? styles.routeActionDisabled : null,
+      ]}
+      contentStyle={tripButtonContentStyle}
+      labelStyle={[
+        icon
+          ? filled
+            ? tripFilledIconLabelStyle
+            : tripOutlineIconLabelStyle
+          : filled
+            ? tripFilledLabelStyle
+            : tripOutlineLabelStyle,
+        { color: textColor },
+      ]}
+    >
+      {label}
+    </Button>
+  );
+}
+
+function hasSavedDiaryData(tripPlace: TripPlace): boolean {
+  return (
+    tripPlace.notes.trim().length > 0 || tripPlace.photos.length > 0
+  );
+}
+
+/** Сравнивает только локальные календарные даты, без UTC и времени суток. */
+function isTripEnded(endDate: string | null): boolean {
+  if (!endDate) {
+    return false;
+  }
+
+  const value = endDate.trim();
+  const storageMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const uiMatch = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(value);
+
+  const year = storageMatch
+    ? Number(storageMatch[1])
+    : uiMatch
+      ? Number(uiMatch[3])
+      : NaN;
+  const month = storageMatch
+    ? Number(storageMatch[2])
+    : uiMatch
+      ? Number(uiMatch[2])
+      : NaN;
+  const day = storageMatch
+    ? Number(storageMatch[3])
+    : uiMatch
+      ? Number(uiMatch[1])
+      : NaN;
+
+  const parsed = new Date(year, month - 1, day);
+  if (
+    !Number.isFinite(year) ||
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+  const endDateKey = year * 10_000 + month * 100 + day;
+  const todayKey =
+    today.getFullYear() * 10_000 +
+    (today.getMonth() + 1) * 100 +
+    today.getDate();
+
+  return endDateKey < todayKey;
+}
 
 export default function TripDetailsScreen() {
   const router = useRouter();
@@ -68,8 +188,9 @@ export default function TripDetailsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [addPlaceVisible, setAddPlaceVisible] = useState(false);
+  const [removePlaceId, setRemovePlaceId] = useState<number | null>(null);
+  const [cannotUnvisitVisible, setCannotUnvisitVisible] = useState(false);
   const [routeMode, setRouteMode] = useState<RouteMode>('all');
-  const [notesDrafts, setNotesDrafts] = useState<Record<number, string>>({});
   const [busyId, setBusyId] = useState<number | null>(null);
 
   const loadTrip = useCallback(async () => {
@@ -87,13 +208,6 @@ export default function TripDetailsScreen() {
       ]);
       setTrip(data);
       setPlacesById(new Map(allPlaces.map((place) => [place.id, place])));
-      if (data) {
-        const drafts: Record<number, string> = {};
-        for (const tripPlace of data.places) {
-          drafts[tripPlace.id] = tripPlace.notes;
-        }
-        setNotesDrafts(drafts);
-      }
       setError(data ? null : 'Поездка не найдена');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить поездку');
@@ -130,6 +244,7 @@ export default function TripDetailsScreen() {
   }, [trip, placesById]);
 
   const pencilLeft = windowWidth / 2 - HEADER_ACTION_SIZE / 2;
+  const tripEnded = trip ? isTripEnded(trip.endDate) : false;
 
   const handleDelete = async () => {
     setDeleteVisible(false);
@@ -142,6 +257,10 @@ export default function TripDetailsScreen() {
   };
 
   const handleSetCurrent = async () => {
+    if (!trip || isTripEnded(trip.endDate)) {
+      return;
+    }
+
     try {
       const updated = await setCurrentTrip(tripId);
       if (updated) {
@@ -164,6 +283,11 @@ export default function TripDetailsScreen() {
     if (index < 0 || nextIndex < 0 || nextIndex >= ids.length) {
       return;
     }
+    const tripPlace = trip.places[index];
+    if (tripPlace?.visited) {
+      return;
+    }
+
     const next = [...ids];
     const [item] = next.splice(index, 1);
     next.splice(nextIndex, 0, item);
@@ -175,10 +299,39 @@ export default function TripDetailsScreen() {
     }
   };
 
-  const handleToggleVisited = async (tripPlace: TripPlace, visited: boolean) => {
+  const handleToggleVisited = async (tripPlace: TripPlace) => {
+    if (!tripPlace.visited) {
+      setBusyId(tripPlace.id);
+      try {
+        const updated = await markTripPlaceVisited(tripPlace.id, true);
+        if (updated && trip) {
+          setTrip({
+            ...trip,
+            places: trip.places.map((item) =>
+              item.id === updated.id ? updated : item,
+            ),
+          });
+        }
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'Не удалось обновить статус посещения',
+        );
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
+
+    if (hasSavedDiaryData(tripPlace)) {
+      setCannotUnvisitVisible(true);
+      return;
+    }
+
     setBusyId(tripPlace.id);
     try {
-      const updated = await markTripPlaceVisited(tripPlace.id, visited);
+      const updated = await markTripPlaceVisited(tripPlace.id, false);
       if (updated && trip) {
         setTrip({
           ...trip,
@@ -189,15 +342,16 @@ export default function TripDetailsScreen() {
       }
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Не удалось обновить статус посещения',
+        e instanceof Error
+          ? e.message
+          : 'Не удалось обновить статус посещения',
       );
     } finally {
       setBusyId(null);
     }
   };
 
-  const handleSaveNotes = async (tripPlaceId: number) => {
-    const notes = notesDrafts[tripPlaceId] ?? '';
+  const handleSaveNotes = async (tripPlaceId: number, notes: string) => {
     setBusyId(tripPlaceId);
     try {
       const updated = await updateTripPlaceNotes(tripPlaceId, notes);
@@ -209,14 +363,17 @@ export default function TripDetailsScreen() {
           ),
         });
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить заметки');
     } finally {
       setBusyId(null);
     }
   };
 
-  const handleRemovePlace = async (tripPlaceId: number) => {
+  const confirmRemovePlace = async () => {
+    if (removePlaceId == null) {
+      return;
+    }
+    const tripPlaceId = removePlaceId;
+    setRemovePlaceId(null);
     try {
       await removePlaceFromTrip(tripPlaceId);
       await loadTrip();
@@ -366,14 +523,16 @@ export default function TripDetailsScreen() {
 
               {trip.current ? (
                 <Text style={styles.currentBadge}>Текущая поездка</Text>
-              ) : (
+              ) : tripEnded ? null : (
                 <Button
                   mode="outlined"
-                  icon="check-circle-outline"
+                  icon={tripIcon('check-circle-outline')}
                   onPress={handleSetCurrent}
                   textColor={UI.primary}
+                  theme={tripButtonTheme}
                   style={styles.outlineButton}
-                  contentStyle={primaryButtonContentStyle}
+                  contentStyle={tripButtonContentStyle}
+                  labelStyle={tripOutlineIconLabelStyle}
                 >
                   Сделать текущей
                 </Button>
@@ -440,117 +599,110 @@ export default function TripDetailsScreen() {
                   const absoluteIndex = trip.places.findIndex(
                     (item) => item.id === tripPlace.id,
                   );
-                  const showDiaryFields =
-                    tripPlace.visited || routeMode === 'diary';
+                  const orderNumber =
+                    absoluteIndex >= 0 ? absoluteIndex + 1 : index + 1;
+                  const isFirst = absoluteIndex <= 0;
+                  const isLast =
+                    absoluteIndex < 0 ||
+                    absoluteIndex >= trip.places.length - 1;
+                  const moveLocked = tripPlace.visited;
+                  const showDiaryFields = tripPlace.visited;
 
                   return (
                     <View key={tripPlace.id} style={styles.tripPlaceCard}>
                       <View style={styles.tripPlaceHeader}>
-                        <Text style={styles.orderBadge}>
-                          {absoluteIndex >= 0 ? absoluteIndex + 1 : index + 1}
-                        </Text>
+                        <Text style={styles.orderBadge}>{orderNumber}</Text>
                         <View style={styles.tripPlaceTitleWrap}>
                           <Text variant="titleMedium" numberOfLines={2}>
                             {place?.name ?? `Место #${tripPlace.placeId}`}
                           </Text>
-                          {place?.dd ? (
-                            <Text
-                              variant="bodySmall"
-                              style={styles.meta}
-                              numberOfLines={1}
-                            >
-                              {place.dd}
-                            </Text>
-                          ) : null}
                         </View>
                         <View style={styles.reorderColumn}>
                           <Pressable
-                            onPress={() => handleReorder(tripPlace.id, -1)}
-                            hitSlop={8}
+                            onPress={() =>
+                              void handleReorder(tripPlace.id, -1)
+                            }
+                            hitSlop={10}
+                            disabled={moveLocked || isFirst}
                             style={styles.reorderButton}
                             accessibilityLabel="Выше"
                           >
                             <MaterialCommunityIcons
                               name="chevron-up"
                               size={22}
-                              color={UI.primary}
+                              color={
+                                moveLocked || isFirst
+                                  ? UI.mutedText
+                                  : UI.primary
+                              }
                             />
                           </Pressable>
                           <Pressable
-                            onPress={() => handleReorder(tripPlace.id, 1)}
-                            hitSlop={8}
+                            onPress={() => void handleReorder(tripPlace.id, 1)}
+                            hitSlop={10}
+                            disabled={moveLocked || isLast}
                             style={styles.reorderButton}
                             accessibilityLabel="Ниже"
                           >
                             <MaterialCommunityIcons
                               name="chevron-down"
                               size={22}
-                              color={UI.primary}
+                              color={
+                                moveLocked || isLast
+                                  ? UI.mutedText
+                                  : UI.primary
+                              }
                             />
                           </Pressable>
                         </View>
                       </View>
 
-                      <View style={styles.visitedRow}>
-                        <Text style={styles.switchLabel}>Посещено</Text>
-                        <Switch
-                          value={tripPlace.visited}
-                          disabled={busyId === tripPlace.id}
-                          onValueChange={(value) =>
-                            void handleToggleVisited(tripPlace, value)
-                          }
-                        />
-                      </View>
-
-                      {tripPlace.visited && tripPlace.visitDate ? (
-                        <Text variant="bodySmall" style={styles.meta}>
-                          Дата визита: {formatDateTimeLabel(tripPlace.visitDate)}
-                        </Text>
-                      ) : null}
-
                       {place?.dd ? (
                         <Button
                           mode="outlined"
-                          icon="map-marker"
+                          icon={tripIcon('map-marker')}
                           onPress={() => void handleOpenMap(place)}
                           textColor={UI.primary}
+                          theme={tripButtonTheme}
                           style={styles.mapButton}
-                          contentStyle={primaryButtonContentStyle}
-                          labelStyle={styles.mapButtonLabel}
+                          contentStyle={tripButtonContentStyle}
+                          labelStyle={tripOutlineIconLabelStyle}
                         >
                           Открыть на карте
                         </Button>
                       ) : null}
 
+                      <View style={styles.actionsRow}>
+                        <RouteActionButton
+                          label="Уже был"
+                          filled={tripPlace.visited}
+                          disabled={busyId === tripPlace.id}
+                          onPress={() => void handleToggleVisited(tripPlace)}
+                        />
+                        <RouteActionButton
+                          label="Удалить"
+                          icon="delete"
+                          onPress={() => setRemovePlaceId(tripPlace.id)}
+                        />
+                      </View>
+
                       {showDiaryFields ? (
                         <>
-                          <Text variant="titleSmall" style={styles.cardLabel}>
-                            Заметки
-                          </Text>
-                          <TextInput
-                            value={notesDrafts[tripPlace.id] ?? ''}
-                            onChangeText={(text) =>
-                              setNotesDrafts((prev) => ({
-                                ...prev,
-                                [tripPlace.id]: text,
-                              }))
+                          {tripPlace.visitDate ? (
+                            <Text variant="bodySmall" style={styles.meta}>
+                              Дата визита:{' '}
+                              {formatDateTimeLabel(tripPlace.visitDate)}
+                            </Text>
+                          ) : null}
+
+                          <TripPlaceNotesSection
+                            tripPlaceId={tripPlace.id}
+                            notes={tripPlace.notes}
+                            saving={busyId === tripPlace.id}
+                            onSave={(nextNotes) =>
+                              handleSaveNotes(tripPlace.id, nextNotes)
                             }
-                            mode="outlined"
-                            multiline
-                            numberOfLines={2}
-                            dense
-                            style={styles.notesInput}
                           />
-                          <Button
-                            mode="outlined"
-                            onPress={() => void handleSaveNotes(tripPlace.id)}
-                            loading={busyId === tripPlace.id}
-                            textColor={UI.primary}
-                            style={styles.outlineButton}
-                            contentStyle={primaryButtonContentStyle}
-                          >
-                            Сохранить заметки
-                          </Button>
 
                           <Text variant="titleSmall" style={styles.cardLabel}>
                             Фото посещения
@@ -558,27 +710,31 @@ export default function TripDetailsScreen() {
                           <View style={styles.photoActions}>
                             <Button
                               mode="outlined"
-                              icon="image-plus"
+                              icon={tripIcon('image-plus')}
                               onPress={() => void pickPhotos(tripPlace.id)}
                               textColor={UI.primary}
+                              theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
                                 styles.photoActionButton,
                               ]}
-                              contentStyle={primaryButtonContentStyle}
+                              contentStyle={tripButtonContentStyle}
+                              labelStyle={tripOutlineIconLabelStyle}
                             >
                               Галерея
                             </Button>
                             <Button
                               mode="outlined"
-                              icon="camera"
+                              icon={tripIcon('camera')}
                               onPress={() => void takePhoto(tripPlace.id)}
                               textColor={UI.primary}
+                              theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
                                 styles.photoActionButton,
                               ]}
-                              contentStyle={primaryButtonContentStyle}
+                              contentStyle={tripButtonContentStyle}
+                              labelStyle={tripOutlineIconLabelStyle}
                             >
                               Камера
                             </Button>
@@ -591,19 +747,6 @@ export default function TripDetailsScreen() {
                           />
                         </>
                       ) : null}
-
-                      <Pressable
-                        onPress={() => void handleRemovePlace(tripPlace.id)}
-                        style={styles.removeRow}
-                        accessibilityLabel="Убрать из поездки"
-                      >
-                        <MaterialCommunityIcons
-                          name="delete"
-                          size={18}
-                          color={HEADER_DELETE}
-                        />
-                        <Text style={styles.removeText}>Убрать из поездки</Text>
-                      </Pressable>
                     </View>
                   );
                 })
@@ -645,6 +788,56 @@ export default function TripDetailsScreen() {
               textColor={theme.colors.error}
               onPress={() => {
                 void handleDelete();
+              }}
+            >
+              Удалить
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={cannotUnvisitVisible}
+          onDismiss={() => setCannotUnvisitVisible(false)}
+        >
+          <Dialog.Title>Нельзя отменить посещение</Dialog.Title>
+          <Dialog.Content>
+            <Text>
+              Для этого места уже сохранены заметки или фотографии посещения.
+              Сначала удалите их.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={UI.primary}
+              onPress={() => setCannotUnvisitVisible(false)}
+            >
+              Понятно
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={removePlaceId != null}
+          onDismiss={() => setRemovePlaceId(null)}
+        >
+          <Dialog.Title>Убрать место из поездки?</Dialog.Title>
+          <Dialog.Content>
+            <Text>
+              Место будет убрано только из этой поездки. Само место в разделе
+              «Места» останется.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              textColor={UI.primary}
+              onPress={() => setRemovePlaceId(null)}
+            >
+              Отмена
+            </Button>
+            <Button
+              textColor={theme.colors.error}
+              onPress={() => {
+                void confirmRemovePlace();
               }}
             >
               Удалить
@@ -793,71 +986,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reorderButton: {
-    width: 32,
-    height: 28,
+    width: 36,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  visitedRow: {
+  actionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 36,
+    gap: TRIP_BUTTON.gap,
+    marginTop: 2,
   },
-  switchLabel: {
-    fontSize: 14,
-    lineHeight: 17,
-    color: '#333',
+  routeActionButton: {
+    flex: 1,
+    minWidth: 0,
+  },
+  routeActionDisabled: {
+    borderColor: '#C8C8C8',
+    opacity: 0.7,
   },
   meta: {
     color: UI.mutedText,
     marginTop: 2,
   },
   mapButton: {
-    ...primaryButtonStyle,
-    marginTop: 4,
-    borderColor: UI.primary,
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
-  },
-  mapButtonLabel: {
-    fontSize: UI.buttonFontSize,
-    marginVertical: 0,
-    color: UI.primary,
+    ...tripOutlineButtonStyle,
+    marginTop: 2,
   },
   cardLabel: {
     marginTop: 6,
     opacity: 0.7,
   },
-  notesInput: {
-    marginBottom: 4,
-  },
   outlineButton: {
-    ...primaryButtonStyle,
-    borderColor: UI.primary,
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
+    ...tripOutlineButtonStyle,
     marginTop: 4,
   },
   photoActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: TRIP_BUTTON.gap,
     marginBottom: 6,
   },
   photoActionButton: {
     flexGrow: 1,
-  },
-  removeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  removeText: {
-    color: UI.mutedText,
-    fontSize: 13,
   },
   addPlaceButton: {
     marginTop: 8,
