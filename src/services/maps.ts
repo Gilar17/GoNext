@@ -26,3 +26,26 @@ export async function openPlaceOnMap(dd: DecimalDegrees | null): Promise<void> {
     await Linking.openURL(mapsUrl);
   }
 }
+
+/**
+ * Открывает навигацию строго по сохранённой паре DD места.
+ * Не использует геолокацию устройства.
+ */
+export async function openPlaceInNavigator(
+  dd: DecimalDegrees | null,
+): Promise<void> {
+  const parsed = parseDdPair(dd);
+  if (!parsed) {
+    throw new Error(INVALID_DD_MESSAGE);
+  }
+
+  const { latitude, longitude } = parsed;
+  const navigationUrl = `google.navigation:q=${latitude},${longitude}`;
+  const mapsDirUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+  try {
+    await Linking.openURL(navigationUrl);
+  } catch {
+    await Linking.openURL(mapsDirUrl);
+  }
+}

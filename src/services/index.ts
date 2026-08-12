@@ -4,5 +4,5 @@ export {
   formatDdPair,
   isValidDdPair,
 } from './coordinates';
-export { openPlaceOnMap } from './maps';
+export { openPlaceOnMap, openPlaceInNavigator } from './maps';
 export { getCurrentDdPair } from './location';

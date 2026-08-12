@@ -107,3 +107,28 @@ export function toStorageDate(value: string): string | null {
 export function normalizeDateInput(value: string): string | null {
   return toStorageDate(value);
 }
+
+/**
+ * Поездка завершена, только если endDate строго раньше сегодняшней
+ * локальной календарной даты. В день окончания поездка ещё активна.
+ * Сравниваются ключи YYYYMMDD без UTC и времени суток.
+ */
+export function isTripEnded(endDate: string | null | undefined): boolean {
+  if (!endDate) {
+    return false;
+  }
+
+  const parts = parseDateParts(endDate);
+  if (!parts) {
+    return false;
+  }
+
+  const today = new Date();
+  const endDateKey = parts.y * 10_000 + parts.m * 100 + parts.d;
+  const todayKey =
+    today.getFullYear() * 10_000 +
+    (today.getMonth() + 1) * 100 +
+    today.getDate();
+
+  return endDateKey < todayKey;
+}
