@@ -45,7 +45,7 @@ export default function RootLayout() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Ошибка инициализации БД');
+          setError('Не удалось запустить приложение');
         }
       }
     })();
