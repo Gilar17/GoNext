@@ -14,6 +14,7 @@ import {
   Switch,
   Text,
   TextInput,
+  useTheme,
 } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
@@ -76,8 +77,10 @@ export function PlaceForm({
   });
   const [pendingPhotoUris, setPendingPhotoUris] = useState<string[]>(initialPending);
   const [error, setError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewPhoto | null>(null);
+  const theme = useTheme();
 
   const ddInvalid = !isValidDdPair(values.dd);
 
@@ -125,12 +128,18 @@ export function PlaceForm({
 
   const fillCurrentLocation = async () => {
     setLocationLoading(true);
-    setError(null);
+    setLocationError(null);
     try {
       const dd = await getCurrentDdPair();
       update('dd', dd);
+      setLocationError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось получить координаты');
+      const message = e instanceof Error ? e.message : '';
+      setLocationError(
+        message === 'Нет доступа к геопозиции'
+          ? 'Нет доступа к геолокации'
+          : 'Не удалось получить координаты',
+      );
     } finally {
       setLocationLoading(false);
     }
@@ -142,7 +151,6 @@ export function PlaceForm({
       return;
     }
     if (ddInvalid) {
-      setError('Координаты должны быть в формате: 55.744920, 37.604677');
       return;
     }
 
@@ -223,22 +231,36 @@ export function PlaceForm({
             style={styles.field}
             dense
           />
-          <HelperText type={ddInvalid ? 'error' : 'info'} style={styles.helper}>
-            Вставьте пару из карт целиком: широта, долгота
-          </HelperText>
+          <Text
+            style={[
+              styles.ddHint,
+              ddInvalid ? { color: theme.colors.error } : null,
+            ]}
+          >
+            Формат: 55.744920, 37.604677
+          </Text>
 
           {isEdit ? (
-            <Button
-              mode="outlined"
-              icon="crosshairs-gps"
-              onPress={fillCurrentLocation}
-              loading={locationLoading}
-              textColor={UI.primary}
-              style={[styles.field, styles.outlineButton]}
-              contentStyle={primaryButtonContentStyle}
-            >
-              Текущая геопозиция
-            </Button>
+            <>
+              <Button
+                mode="outlined"
+                icon="crosshairs-gps"
+                onPress={fillCurrentLocation}
+                loading={locationLoading}
+                textColor={UI.primary}
+                style={[styles.field, styles.outlineButton]}
+                contentStyle={primaryButtonContentStyle}
+              >
+                Текущая геопозиция
+              </Button>
+              {locationError ? (
+                <Text
+                  style={[styles.locationError, { color: theme.colors.error }]}
+                >
+                  {locationError}
+                </Text>
+              ) : null}
+            </>
           ) : null}
 
           <Text variant="titleSmall" style={styles.sectionTitle}>
@@ -394,10 +416,20 @@ const styles = StyleSheet.create({
   field: {
     marginBottom: 6,
   },
-  helper: {
-    marginTop: -4,
-    marginBottom: 4,
-    paddingVertical: 0,
+  ddHint: {
+    marginTop: -2,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    color: UI.mutedText,
+  },
+  locationError: {
+    marginTop: -2,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+    fontSize: 12,
+    lineHeight: 16,
   },
   switchesRow: {
     flexDirection: 'row',

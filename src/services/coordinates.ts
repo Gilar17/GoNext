@@ -5,25 +5,26 @@ export type ParsedCoordinates = {
   longitude: number;
 };
 
+/** Ровно 6 цифр после точки у каждой координаты: «55.744920, 37.604677». */
+const DD_PAIR_PATTERN = /^(-?\d+\.\d{6})\s*,\s*(-?\d+\.\d{6})$/;
+
 /**
- * Разбирает одну пару DD вида «55.744920, 37.604677».
+ * Единый разбор и проверка пары DD вида «55.744920, 37.604677».
+ * Формат исходной строки проверяется до Number: ровно 6 знаков после точки.
+ * Широта: −90…90, долгота: −180…180. Пустое или некорректное значение → null.
  */
 export function parseDdPair(dd: string | null | undefined): ParsedCoordinates | null {
   if (!dd) {
     return null;
   }
 
-  const normalized = dd.trim().replace(/\s+/g, ' ');
-  const match = normalized.match(
-    /^(-?\d+(?:[.,]\d+)?)\s*,\s*(-?\d+(?:[.,]\d+)?)$/,
-  );
-
+  const match = dd.trim().match(DD_PAIR_PATTERN);
   if (!match) {
     return null;
   }
 
-  const latitude = Number(match[1].replace(',', '.'));
-  const longitude = Number(match[2].replace(',', '.'));
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
@@ -37,7 +38,7 @@ export function parseDdPair(dd: string | null | undefined): ParsedCoordinates | 
 }
 
 export function formatDdPair(latitude: number, longitude: number): DecimalDegrees {
-  return `${latitude}, ${longitude}`;
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
 export function isValidDdPair(dd: string | null | undefined): boolean {
