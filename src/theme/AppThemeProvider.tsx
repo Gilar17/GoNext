@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import {
   MD3DarkTheme,
@@ -35,11 +36,16 @@ type AppThemeContextValue = {
   setColorScheme: (scheme: ColorSchemeName) => void;
   primary: string;
   setPrimary: (color: string) => void;
+  showBackgroundImage: boolean;
+  setShowBackgroundImage: (value: boolean) => void;
   paperTheme: MD3Theme;
   surfaces: SurfaceColors;
 };
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
+
+const SHOW_BACKGROUND_IMAGE_KEY = '@gonext/showBackgroundImage';
+const DEFAULT_SHOW_BACKGROUND_IMAGE = true;
 
 function getSettingsPath(): string | null {
   const base = FileSystem.documentDirectory;
@@ -96,19 +102,49 @@ async function saveAppearance(settings: AppearanceSettings): Promise<void> {
   await FileSystem.writeAsStringAsync(path, JSON.stringify(settings));
 }
 
+async function loadShowBackgroundImage(): Promise<boolean> {
+  try {
+    const saved = await AsyncStorage.getItem(SHOW_BACKGROUND_IMAGE_KEY);
+    if (saved === null) {
+      return DEFAULT_SHOW_BACKGROUND_IMAGE;
+    }
+    return saved !== 'false';
+  } catch {
+    return DEFAULT_SHOW_BACKGROUND_IMAGE;
+  }
+}
+
+async function saveShowBackgroundImage(value: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(
+      SHOW_BACKGROUND_IMAGE_KEY,
+      value ? 'true' : 'false',
+    );
+  } catch {
+    // Выбор уже применён в памяти.
+  }
+}
+
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [colorScheme, setColorSchemeState] =
     useState<ColorSchemeName>('light');
   const [primary, setPrimaryState] = useState(DEFAULT_PRIMARY);
+  const [showBackgroundImage, setShowBackgroundImageState] = useState(
+    DEFAULT_SHOW_BACKGROUND_IMAGE,
+  );
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const saved = await loadAppearance();
+      const [saved, savedShowBackground] = await Promise.all([
+        loadAppearance(),
+        loadShowBackgroundImage(),
+      ]);
       if (!cancelled) {
         setColorSchemeState(saved.colorScheme);
         setPrimaryState(saved.primary);
+        setShowBackgroundImageState(savedShowBackground);
         setReady(true);
       }
     })();
@@ -124,6 +160,13 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     void saveAppearance({ colorScheme, primary });
   }, [ready, colorScheme, primary]);
 
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    void saveShowBackgroundImage(showBackgroundImage);
+  }, [ready, showBackgroundImage]);
+
   const setColorScheme = useCallback((scheme: ColorSchemeName) => {
     setColorSchemeState(scheme);
   }, []);
@@ -134,6 +177,10 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setShowBackgroundImage = useCallback((value: boolean) => {
+    setShowBackgroundImageState(value);
+  }, []);
+
   const value = useMemo<AppThemeContextValue>(
     () => ({
       ready,
@@ -141,10 +188,20 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
       setColorScheme,
       primary,
       setPrimary,
+      showBackgroundImage,
+      setShowBackgroundImage,
       paperTheme: getPaperTheme(colorScheme, primary),
       surfaces: getSurfaceColors(colorScheme, primary),
     }),
-    [ready, colorScheme, setColorScheme, primary, setPrimary],
+    [
+      ready,
+      colorScheme,
+      setColorScheme,
+      primary,
+      setPrimary,
+      showBackgroundImage,
+      setShowBackgroundImage,
+    ],
   );
 
   return (

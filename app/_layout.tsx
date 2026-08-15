@@ -36,11 +36,18 @@ function PaperIcon({
 function ThemedApp() {
   const { i18n: i18nInstance } = useTranslation();
   const language = normalizeLanguage(i18nInstance.language);
-  const { ready: themeReady, colorScheme, paperTheme, surfaces } =
-    useAppTheme();
+  const {
+    ready: themeReady,
+    colorScheme,
+    paperTheme,
+    surfaces,
+    showBackgroundImage: showBackgroundImageSetting,
+  } = useAppTheme();
   const [bootReady, setBootReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isDark = colorScheme === 'dark';
+  const showBackgroundImage =
+    colorScheme === 'light' && showBackgroundImageSetting;
 
   useEffect(() => {
     let cancelled = false;
@@ -92,16 +99,7 @@ function ThemedApp() {
       }}
     >
       <StatusBar style={isDark ? 'light' : 'auto'} />
-      {isDark ? (
-        <View
-          style={[
-            styles.background,
-            { backgroundColor: surfaces.appBackground },
-          ]}
-        >
-          {content}
-        </View>
-      ) : (
+      {showBackgroundImage ? (
         <ImageBackground
           source={require('../assets/backgrounds/gonext-bg.png')}
           style={styles.background}
@@ -109,6 +107,19 @@ function ThemedApp() {
         >
           {content}
         </ImageBackground>
+      ) : (
+        <View
+          style={[
+            styles.background,
+            {
+              backgroundColor: isDark
+                ? surfaces.appBackground
+                : paperTheme.colors.background,
+            },
+          ]}
+        >
+          {content}
+        </View>
       )}
     </PaperProvider>
   );

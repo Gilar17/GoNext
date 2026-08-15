@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Constants from 'expo-constants';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Button, Snackbar, Text } from 'react-native-paper';
+import { Button, Snackbar, Switch, Text } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FilterToggleButton } from '@/src/components/FilterToggleButton';
@@ -39,8 +39,15 @@ function settingsIcon(name: keyof typeof MaterialCommunityIcons.glyphMap) {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const { colorScheme, setColorScheme, primary, setPrimary, surfaces } =
-    useAppTheme();
+  const {
+    colorScheme,
+    setColorScheme,
+    primary,
+    setPrimary,
+    showBackgroundImage,
+    setShowBackgroundImage,
+    surfaces,
+  } = useAppTheme();
   const accent = useAccentStyles();
   const [error, setError] = useState<string | null>(null);
   const language = normalizeLanguage(i18n.language);
@@ -145,6 +152,21 @@ export default function SettingsScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+
+            <View style={styles.backgroundSwitchRow}>
+              <Text
+                style={[
+                  styles.backgroundSwitchLabel,
+                  { color: surfaces.bodyText },
+                ]}
+              >
+                {t('settings.showBackgroundImage')}
+              </Text>
+              <Switch
+                value={showBackgroundImage}
+                onValueChange={setShowBackgroundImage}
+              />
             </View>
 
             <Text variant="titleSmall" style={styles.sectionSpaced}>
@@ -260,6 +282,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
     elevation: 3,
+  },
+  backgroundSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    minHeight: 40,
+    marginTop: 16,
+  },
+  backgroundSwitchLabel: {
+    flex: 1,
+    flexShrink: 1,
+    fontSize: 16,
+    lineHeight: 22,
   },
   info: {
     fontSize: 14,
