@@ -1,3 +1,4 @@
+import i18n from '@/src/i18n';
 import type { TripPlace, TripPlacePhoto } from '@/src/types';
 import { deletePhotoFile, savePhotoFile } from '@/src/services/photos';
 import { getDatabase } from './client';
@@ -89,7 +90,7 @@ export async function addPlaceToTrip(
 
   const tripPlace = await getTripPlaceById(Number(result.lastInsertRowId));
   if (!tripPlace) {
-    throw new Error('Не удалось добавить место в поездку');
+    throw new Error(i18n.t('errors.addPlaceToTripFailed'));
   }
   return tripPlace;
 }
@@ -185,7 +186,7 @@ export async function addTripPlacePhoto(
 ): Promise<TripPlacePhoto> {
   const tripPlace = await getTripPlaceById(tripPlaceId);
   if (!tripPlace) {
-    throw new Error(`Место поездки ${tripPlaceId} не найдено`);
+    throw new Error(i18n.t('errors.tripPlaceNotFound', { id: tripPlaceId }));
   }
 
   const filePath = await savePhotoFile(sourceUri);

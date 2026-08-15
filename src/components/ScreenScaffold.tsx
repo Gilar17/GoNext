@@ -6,8 +6,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Appbar, Text } from 'react-native-paper';
+import { Appbar, Text, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 type ScreenScaffoldProps = {
   title: string;
@@ -30,24 +31,35 @@ export function ScreenScaffold({
   contentStyle,
 }: ScreenScaffoldProps) {
   const router = useRouter();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const titleIconColor = theme.dark ? theme.colors.onSurface : '#fff';
+  const inlineTitleColor = theme.dark ? theme.colors.onSurface : '#000000';
 
   return (
     <View style={styles.container}>
       <Appbar.Header style={styles.header}>
         {showBack ? (
-          <Appbar.BackAction onPress={() => router.back()} />
+          <Appbar.BackAction
+            onPress={() => router.back()}
+            accessibilityLabel={t('common.back')}
+          />
         ) : null}
         {titleIcon ? (
           <MaterialCommunityIcons
             name={titleIcon}
             size={22}
-            color="#fff"
+            color={titleIconColor}
             style={styles.titleIcon}
           />
         ) : null}
         {titleTrailing ? (
           <>
-            <Text variant="titleLarge" style={styles.inlineTitle} numberOfLines={1}>
+            <Text
+              variant="titleLarge"
+              style={[styles.inlineTitle, { color: inlineTitleColor }]}
+              numberOfLines={1}
+            >
               {title}
             </Text>
             <View style={styles.headerSpacer} />
@@ -75,12 +87,13 @@ type PlaceholderScreenProps = {
 
 export function PlaceholderScreen({
   title,
-  description = 'Экран будет реализован на следующих этапах.',
+  description,
 }: PlaceholderScreenProps) {
+  const { t } = useTranslation();
   return (
     <ScreenScaffold title={title}>
       <Text variant="bodyLarge" style={styles.placeholder}>
-        {description}
+        {description ?? t('scaffold.placeholder')}
       </Text>
     </ScreenScaffold>
   );

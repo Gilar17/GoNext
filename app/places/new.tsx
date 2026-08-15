@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { PlaceForm, type PlaceFormValues } from '@/src/components/PlaceForm';
 import { addPlacePhoto, createPlace } from '@/src/db';
 
 export default function NewPlaceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (
@@ -34,10 +36,10 @@ export default function NewPlaceScreen() {
   };
 
   return (
-    <ScreenScaffold title="Новое место" contentStyle={styles.content}>
+    <ScreenScaffold title={t('places.newTitle')} contentStyle={styles.content}>
       <PlaceForm
         mode="create"
-        submitLabel="Сохранить"
+        submitLabel={t('common.save')}
         saving={saving}
         onSubmit={handleSubmit}
       />

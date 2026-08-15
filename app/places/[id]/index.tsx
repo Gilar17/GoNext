@@ -16,6 +16,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { PlacePhotoGallery } from '@/src/components/PlacePhotoGallery';
@@ -26,6 +27,8 @@ import {
   primaryButtonStyle,
   UI,
 } from '@/src/theme/ui';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
+import { getDateLocale } from '@/src/i18n';
 import type { Place } from '@/src/types';
 
 const MARK_VISIT_LATER = '#3B8F5C';
@@ -35,7 +38,9 @@ const HEADER_ACTION_SIZE = 40;
 
 export default function PlaceDetailsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const { surfaces, primary } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,7 +53,7 @@ export default function PlaceDetailsScreen() {
 
   const loadPlace = useCallback(async () => {
     if (!Number.isFinite(placeId)) {
-      setError('Некорректный идентификатор места');
+      setError(t('errors.invalidPlaceId'));
       setLoading(false);
       return;
     }
@@ -57,13 +62,13 @@ export default function PlaceDetailsScreen() {
     try {
       const data = await getPlaceById(placeId);
       setPlace(data);
-      setError(data ? null : 'Место не найдено');
+      setError(data ? null : t('errors.placeNotFound'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить место');
+      setError(e instanceof Error ? e.message : t('errors.loadPlaceFailed'));
     } finally {
       setLoading(false);
     }
-  }, [placeId]);
+  }, [placeId, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,7 +84,7 @@ export default function PlaceDetailsScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Для этого места не указаны корректные координаты',
+          : t('errors.invalidCoordinates'),
       );
     }
   };
@@ -90,7 +95,7 @@ export default function PlaceDetailsScreen() {
       await deletePlace(placeId);
       router.replace('/places');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось удалить место');
+      setError(e instanceof Error ? e.message : t('errors.deletePlaceFailed'));
     }
   };
 
@@ -107,7 +112,7 @@ export default function PlaceDetailsScreen() {
   return (
     <>
       <ScreenScaffold
-        title="Место"
+        title={t('places.detailsTitle')}
         contentStyle={[
           styles.content,
           { paddingBottom: Math.max(insets.bottom, 8) },
@@ -119,19 +124,19 @@ export default function PlaceDetailsScreen() {
                 onPress={openEdit}
                 hitSlop={12}
                 style={styles.headerAction}
-                accessibilityLabel="Изменить"
+                accessibilityLabel={t('common.edit')}
               >
                 <MaterialCommunityIcons
                   name="pencil"
                   size={22}
-                  color={UI.primary}
+                  color={primary}
                 />
               </Pressable>
               <Pressable
                 onPress={() => setDeleteVisible(true)}
                 hitSlop={12}
                 style={styles.headerAction}
-                accessibilityLabel="Удалить"
+                accessibilityLabel={t('common.delete')}
               >
                 <MaterialCommunityIcons
                   name="delete"
@@ -144,57 +149,57 @@ export default function PlaceDetailsScreen() {
         }
       >
         {loading ? (
-          <Text>Загрузка…</Text>
+          <Text>{t('common.loading')}</Text>
         ) : place ? (
           <ScrollView
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator
           >
-            <View style={styles.panel}>
+            <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
               <Text variant="headlineSmall" style={styles.placeName}>
                 {place.name}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
-                Описание
+                {t('places.description')}
               </Text>
               <Text variant="bodyLarge">
-                {place.description.trim() || 'Без описания'}
+                {place.description.trim() || t('common.noDescription')}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
-                Фотографии
+                {t('places.photos')}
               </Text>
               <PlacePhotoGallery photos={place.photos} />
 
               <Text variant="titleSmall" style={styles.label}>
-                Координаты (DD)
+                {t('places.coordinates')}
               </Text>
               <Text variant="bodyLarge">
-                {place.dd ?? 'Не указаны'}
+                {place.dd ?? t('common.notSpecified')}
               </Text>
 
               <Button
                 mode="outlined"
                 icon="map-marker"
                 onPress={handleOpenMap}
-                textColor={UI.primary}
-                style={styles.mapButton}
+                textColor={primary}
+                style={[styles.mapButton, { borderColor: primary }]}
                 contentStyle={primaryButtonContentStyle}
-                labelStyle={styles.mapButtonLabel}
+                labelStyle={[styles.mapButtonLabel, { color: primary }]}
               >
-                Открыть на карте
+                {t('places.openOnMap')}
               </Button>
 
               <Text variant="titleSmall" style={styles.labelMuted}>
-                Создано
+                {t('places.created')}
               </Text>
               <Text variant="bodyMedium" style={styles.createdValue}>
-                {new Date(place.createdAt).toLocaleString()}
+                {new Date(place.createdAt).toLocaleString(getDateLocale(i18n.language))}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
-                Отметки
+                {t('places.marks')}
               </Text>
               {hasMarks ? (
                 <View style={styles.marksRow}>
@@ -206,7 +211,7 @@ export default function PlaceDetailsScreen() {
                         color={MARK_VISIT_LATER}
                       />
                       <Text style={[styles.markText, { color: MARK_VISIT_LATER }]}>
-                        Посетить позже
+                        {t('places.visitLater')}
                       </Text>
                     </View>
                   ) : null}
@@ -218,20 +223,20 @@ export default function PlaceDetailsScreen() {
                         color={MARK_LIKED}
                       />
                       <Text style={[styles.markText, { color: MARK_LIKED }]}>
-                        Понравилось
+                        {t('places.liked')}
                       </Text>
                     </View>
                   ) : null}
                 </View>
               ) : (
                 <Text variant="bodyMedium" style={styles.noMarks}>
-                  Нет отметок
+                  {t('places.noMarks')}
                 </Text>
               )}
             </View>
           </ScrollView>
         ) : (
-          <Text>Место не найдено</Text>
+          <Text>{t('errors.placeNotFound')}</Text>
         )}
       </ScreenScaffold>
 
@@ -240,18 +245,18 @@ export default function PlaceDetailsScreen() {
           visible={deleteVisible}
           onDismiss={() => setDeleteVisible(false)}
         >
-          <Dialog.Title>Удалить место?</Dialog.Title>
+          <Dialog.Title>{t('places.deleteConfirmTitle')}</Dialog.Title>
           <Dialog.Content>
             <Text>
-              Вы действительно хотите удалить «{place?.name ?? ''}»?
+              {t('places.deleteConfirmBody', { name: place?.name ?? '' })}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setDeleteVisible(false)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               textColor={theme.colors.error}
@@ -259,7 +264,7 @@ export default function PlaceDetailsScreen() {
                 void handleDelete();
               }}
             >
-              Удалить
+              {t('common.delete')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -281,7 +286,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   panel: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 16,
     paddingBottom: 20,

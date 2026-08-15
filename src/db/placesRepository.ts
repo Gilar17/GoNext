@@ -1,3 +1,4 @@
+import i18n from '@/src/i18n';
 import type { Place, PlaceInput, PlacePhoto } from '@/src/types';
 import { deletePhotoFile, savePhotoFile } from '@/src/services/photos';
 import { getDatabase } from './client';
@@ -40,7 +41,7 @@ export async function createPlace(input: PlaceInput): Promise<Place> {
 
   const place = await getPlaceById(Number(result.lastInsertRowId));
   if (!place) {
-    throw new Error('Не удалось создать место');
+    throw new Error(i18n.t('errors.createPlaceFailed'));
   }
   return place;
 }
@@ -118,7 +119,7 @@ export async function addPlacePhoto(
 ): Promise<PlacePhoto> {
   const place = await getPlaceById(placeId);
   if (!place) {
-    throw new Error(`Место ${placeId} не найдено`);
+    throw new Error(i18n.t('errors.placeNotFoundId', { id: placeId }));
   }
 
   const filePath = await savePhotoFile(sourceUri);

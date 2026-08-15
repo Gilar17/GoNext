@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 import type { PlacePhoto } from '@/src/types';
 
@@ -27,14 +29,16 @@ export function PlacePhotoGallery({
   photos,
   onDeletePhoto,
 }: PlacePhotoGalleryProps) {
+  const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { primary } = useAppTheme();
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [previewSession, setPreviewSession] = useState(0);
 
   if (photos.length === 0) {
     return (
       <Text variant="bodyMedium" style={styles.empty}>
-        Фотографий пока нет
+        {t('places.noPhotos')}
       </Text>
     );
   }
@@ -63,15 +67,15 @@ export function PlacePhotoGallery({
             <View key={photo.id} style={styles.photoWrap}>
               <Pressable
                 onPress={() => openPreview(index)}
-                accessibilityLabel="Открыть фото"
+                accessibilityLabel={t('places.openPhoto')}
               >
                 <Image source={{ uri: photo.filePath }} style={styles.photo} />
               </Pressable>
               {onDeletePhoto ? (
                 <Pressable
-                  style={styles.removePhoto}
+                  style={[styles.removePhoto, { backgroundColor: primary }]}
                   onPress={() => onDeletePhoto(photo.id)}
-                  accessibilityLabel="Удалить фото"
+                  accessibilityLabel={t('places.deletePhoto')}
                 >
                   <MaterialCommunityIcons
                     name="close"
@@ -129,9 +133,9 @@ export function PlacePhotoGallery({
               />
             ) : null}
             <Pressable
-              style={styles.modalClose}
+              style={[styles.modalClose, { backgroundColor: primary }]}
               onPress={() => setPreviewIndex(null)}
-              accessibilityLabel="Закрыть просмотр"
+              accessibilityLabel={t('places.closePreview')}
             >
               <MaterialCommunityIcons
                 name="close"

@@ -18,6 +18,7 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import {
   TRIP_BUTTON,
   tripButtonContentStyle,
@@ -26,7 +27,9 @@ import {
   tripOutlineButtonStyle,
   tripOutlineIconLabelStyle,
   tripOutlineLabelStyle,
+  useAccentStyles,
 } from '@/src/theme/tripButtons';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 
 type TripPlaceNotesSectionProps = {
@@ -54,7 +57,10 @@ export function TripPlaceNotesSection({
   saving = false,
   onSave,
 }: TripPlaceNotesSectionProps) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const { surfaces, primary } = useAppTheme();
+  const accent = useAccentStyles();
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
 
@@ -96,7 +102,7 @@ export function TripPlaceNotesSection({
   const handleSave = async () => {
     const trimmed = draft.trim();
     if (!trimmed) {
-      setEditorError('Заметка не может быть пустой');
+      setEditorError(t('notes.emptyError'));
       return;
     }
     setEditorError(null);
@@ -104,7 +110,7 @@ export function TripPlaceNotesSection({
       await onSave(trimmed);
       setEditorVisible(false);
     } catch {
-      setEditorError('Не удалось сохранить заметку');
+      setEditorError(t('errors.saveNoteFailed'));
     }
   };
 
@@ -116,38 +122,38 @@ export function TripPlaceNotesSection({
   return (
     <View style={styles.section}>
       <Text variant="titleSmall" style={styles.label}>
-        Заметки
+        {t('notes.title')}
       </Text>
 
       {hasNotes ? (
         <>
-          <View style={styles.noteCard}>
-            <Text style={styles.noteText}>{notes}</Text>
+          <View style={[styles.noteCard, { backgroundColor: surfaces.cardItem }]}>
+            <Text style={[styles.noteText, { color: surfaces.noteText }]}>{notes}</Text>
           </View>
           <View style={styles.actionsRow}>
             <Button
               mode="outlined"
               icon={tripIcon('pencil')}
               onPress={openEdit}
-              textColor={UI.primary}
+              textColor={primary}
               theme={tripButtonTheme}
-              style={styles.actionButton}
+              style={[styles.actionButton, accent.outline]}
               contentStyle={tripButtonContentStyle}
-              labelStyle={tripOutlineIconLabelStyle}
+              labelStyle={[tripOutlineIconLabelStyle, accent.label]}
             >
-              Изменить
+              {t('common.edit')}
             </Button>
             <Button
               mode="outlined"
               icon={tripIcon('delete')}
               onPress={() => setDeleteVisible(true)}
-              textColor={UI.primary}
+              textColor={primary}
               theme={tripButtonTheme}
-              style={styles.actionButton}
+              style={[styles.actionButton, accent.outline]}
               contentStyle={tripButtonContentStyle}
-              labelStyle={tripOutlineIconLabelStyle}
+              labelStyle={[tripOutlineIconLabelStyle, accent.label]}
             >
-              Удалить
+              {t('common.delete')}
             </Button>
           </View>
         </>
@@ -156,13 +162,13 @@ export function TripPlaceNotesSection({
           mode="outlined"
           icon={tripIcon('plus')}
           onPress={openCreate}
-          textColor={UI.primary}
+          textColor={primary}
           theme={tripButtonTheme}
-          style={styles.addButton}
+          style={[styles.addButton, accent.outline]}
           contentStyle={tripButtonContentStyle}
-          labelStyle={tripOutlineIconLabelStyle}
+          labelStyle={[tripOutlineIconLabelStyle, accent.label]}
         >
-          Добавить
+          {t('common.add')}
         </Button>
       )}
 
@@ -181,18 +187,23 @@ export function TripPlaceNotesSection({
             style={[
               styles.sheet,
               {
+                backgroundColor: surfaces.sheet,
                 height: sheetHeight,
                 paddingBottom: Math.max(insets.bottom, 12),
               },
             ]}
           >
-            <Text variant="titleMedium" style={styles.sheetTitle}>
+            <Text
+              variant="titleMedium"
+              style={{ color: surfaces.bodyText }}
+            >
               {editorMode === 'create'
-                ? 'Новая заметка'
-                : 'Редактировать заметку'}
+                ? t('notes.newTitle')
+                : t('notes.editTitle')}
             </Text>
 
             <TextInput
+              key={`note-draft-${i18n.language}`}
               value={draft}
               onChangeText={(text) => {
                 setDraft(text);
@@ -202,8 +213,11 @@ export function TripPlaceNotesSection({
               }}
               mode="outlined"
               multiline
-              placeholder="Текст заметки"
-              style={styles.sheetInput}
+              placeholder={t('notes.placeholder')}
+              style={[
+                styles.sheetInput,
+                { backgroundColor: surfaces.card },
+              ]}
               contentStyle={styles.sheetInputContent}
               autoFocus
             />
@@ -218,26 +232,26 @@ export function TripPlaceNotesSection({
                 onPress={() => void handleSave()}
                 loading={saving}
                 disabled={saving}
-                buttonColor={UI.primary}
+                buttonColor={primary}
                 textColor={UI.onPrimary}
                 theme={tripButtonTheme}
                 style={[styles.sheetButton, styles.saveButton]}
                 contentStyle={tripButtonContentStyle}
                 labelStyle={tripFilledLabelStyle}
               >
-                Сохранить
+                {t('common.save')}
               </Button>
               <Button
                 mode="outlined"
                 onPress={closeEditor}
                 disabled={saving}
-                textColor={UI.primary}
+                textColor={primary}
                 theme={tripButtonTheme}
                 style={[styles.sheetButton, styles.cancelButton]}
                 contentStyle={tripButtonContentStyle}
                 labelStyle={tripOutlineLabelStyle}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
             </View>
           </View>
@@ -249,16 +263,16 @@ export function TripPlaceNotesSection({
           visible={deleteVisible}
           onDismiss={() => setDeleteVisible(false)}
         >
-          <Dialog.Title>Удалить заметку?</Dialog.Title>
+          <Dialog.Title>{t('notes.deleteTitle')}</Dialog.Title>
           <Dialog.Content>
-            <Text>Текст заметки будет удалён безвозвратно.</Text>
+            <Text>{t('notes.deleteBody')}</Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setDeleteVisible(false)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               textColor={theme.colors.error}
@@ -266,7 +280,7 @@ export function TripPlaceNotesSection({
                 void handleConfirmDelete();
               }}
             >
-              Удалить
+              {t('common.delete')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -284,13 +298,11 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   noteCard: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   noteText: {
-    color: '#222',
     fontSize: 15,
     lineHeight: 22,
   },
@@ -317,19 +329,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    backgroundColor: 'rgba(255,255,255,0.98)',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
     gap: 10,
   },
-  sheetTitle: {
-    color: '#111',
-  },
   sheetInput: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   sheetInputContent: {
     flex: 1,

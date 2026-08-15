@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { PlaceForm, type PlaceFormValues } from '@/src/components/PlaceForm';
 import {
@@ -14,6 +15,7 @@ import type { Place } from '@/src/types';
 
 export default function EditPlaceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const placeId = Number(id);
 
@@ -24,7 +26,7 @@ export default function EditPlaceScreen() {
 
   const loadPlace = useCallback(async () => {
     if (!Number.isFinite(placeId)) {
-      setError('Некорректный идентификатор места');
+      setError(t('errors.invalidPlaceId'));
       setLoading(false);
       return;
     }
@@ -33,13 +35,13 @@ export default function EditPlaceScreen() {
     try {
       const data = await getPlaceById(placeId);
       setPlace(data);
-      setError(data ? null : 'Место не найдено');
+      setError(data ? null : t('errors.placeNotFound'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить место');
+      setError(e instanceof Error ? e.message : t('errors.loadPlaceFailed'));
     } finally {
       setLoading(false);
     }
-  }, [placeId]);
+  }, [placeId, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,9 +79,9 @@ export default function EditPlaceScreen() {
   };
 
   return (
-    <ScreenScaffold title="Редактирование" contentStyle={styles.content}>
+    <ScreenScaffold title={t('places.editTitle')} contentStyle={styles.content}>
       {loading ? (
-        <Text>Загрузка…</Text>
+        <Text>{t('common.loading')}</Text>
       ) : place ? (
         <PlaceForm
           mode="edit"
@@ -92,13 +94,13 @@ export default function EditPlaceScreen() {
             dd: place.dd ?? '',
           }}
           existingPhotos={place.photos}
-          submitLabel="Сохранить изменения"
+          submitLabel={t('common.saveChanges')}
           saving={saving}
           onSubmit={handleSubmit}
           onDeleteExistingPhoto={handleDeletePhoto}
         />
       ) : (
-        <Text>{error ?? 'Место не найдено'}</Text>
+        <Text>{error ?? t('errors.placeNotFound')}</Text>
       )}
     </ScreenScaffold>
   );

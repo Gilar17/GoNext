@@ -1,19 +1,15 @@
 import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
+import i18n from '@/src/i18n';
 import type { DecimalDegrees } from '@/src/types';
 import { parseDdPair, type ParsedCoordinates } from './coordinates';
-
-const INVALID_DD_MESSAGE =
-  'Для этого места не указаны корректные координаты';
-const MAP_UNAVAILABLE_MESSAGE = 'Не удалось открыть карту';
-const NAVIGATOR_UNAVAILABLE_MESSAGE = 'Не удалось открыть навигатор';
 
 function requirePlaceCoordinates(
   dd: DecimalDegrees | null,
 ): ParsedCoordinates {
   const parsed = parseDdPair(dd);
   if (!parsed) {
-    throw new Error(INVALID_DD_MESSAGE);
+    throw new Error(i18n.t('errors.invalidCoordinates'));
   }
   return parsed;
 }
@@ -76,7 +72,7 @@ async function openExternalUrl(
 export async function openPlaceOnMap(dd: DecimalDegrees | null): Promise<void> {
   const coords = requirePlaceCoordinates(dd);
   const urls = mapUrls(coords);
-  await openExternalUrl(urls.primary, urls.fallback, MAP_UNAVAILABLE_MESSAGE);
+  await openExternalUrl(urls.primary, urls.fallback, i18n.t('errors.mapUnavailable'));
 }
 
 /**
@@ -91,6 +87,6 @@ export async function openPlaceInNavigator(
   await openExternalUrl(
     urls.primary,
     urls.fallback,
-    NAVIGATOR_UNAVAILABLE_MESSAGE,
+    i18n.t('errors.navigatorUnavailable'),
   );
 }

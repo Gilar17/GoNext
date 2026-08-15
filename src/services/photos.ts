@@ -1,11 +1,12 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import i18n from '@/src/i18n';
 
 const PHOTOS_DIR_NAME = 'photos';
 
 function getPhotosDirectory(): string {
   const base = FileSystem.documentDirectory;
   if (!base) {
-    throw new Error('documentDirectory недоступен на этой платформе');
+    throw new Error(i18n.t('errors.photosDirUnavailable'));
   }
   return `${base}${PHOTOS_DIR_NAME}/`;
 }

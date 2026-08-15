@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 
 type FilterToggleButtonProps = {
   label: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
   active: boolean;
   onPress: () => void;
 };
@@ -19,22 +20,30 @@ export function FilterToggleButton({
   active,
   onPress,
 }: FilterToggleButtonProps) {
-  const color = active ? UI.onPrimary : UI.primary;
+  const { surfaces, primary } = useAppTheme();
+  const color = active ? UI.onPrimary : primary;
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={[styles.button, active ? styles.active : styles.idle]}
+      style={[
+        styles.button,
+        active
+          ? { backgroundColor: primary }
+          : { backgroundColor: surfaces.filterIdle },
+      ]}
     >
       <View style={styles.content}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={18}
-          color={color}
-          style={styles.icon}
-        />
+        {icon ? (
+          <MaterialCommunityIcons
+            name={icon}
+            size={18}
+            color={color}
+            style={styles.icon}
+          />
+        ) : null}
         <Text style={[styles.label, { color }]} numberOfLines={1}>
           {label}
         </Text>
@@ -51,12 +60,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 8,
-  },
-  active: {
-    backgroundColor: UI.primary,
-  },
-  idle: {
-    backgroundColor: UI.filterIdle,
   },
   content: {
     flexDirection: 'row',

@@ -9,15 +9,18 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Snackbar, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { listTrips } from '@/src/db';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 import { formatDateLabel } from '@/src/utils/dates';
 import type { Trip } from '@/src/types';
+import type { TFunction } from 'i18next';
 
-function tripDatesLabel(trip: Trip): string | null {
+function tripDatesLabel(trip: Trip, t: TFunction): string | null {
   if (!trip.startDate && !trip.endDate) {
     return null;
   }
@@ -27,14 +30,16 @@ function tripDatesLabel(trip: Trip): string | null {
     return `${start} — ${end}`;
   }
   if (trip.startDate) {
-    return `с ${start}`;
+    return t('trips.datesFrom', { date: start });
   }
-  return `до ${end}`;
+  return t('trips.datesUntil', { date: end });
 }
 
 export default function TripsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { surfaces, primary } = useAppTheme();
   const { height: windowHeight } = useWindowDimensions();
 
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -53,11 +58,11 @@ export default function TripsScreen() {
       setTrips(data);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить поездки');
+      setError(e instanceof Error ? e.message : t('errors.loadTripsFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,18 +82,18 @@ export default function TripsScreen() {
   return (
     <View style={styles.root}>
       <ScreenScaffold
-        title="Поездки"
+        title={t('trips.title')}
         titleIcon="bag-suitcase"
         contentStyle={[
           styles.content,
           { paddingBottom: Math.max(insets.bottom, 8) },
         ]}
       >
-        <View style={styles.panel}>
+        <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
           {loading ? (
-            <Text style={styles.message}>Загрузка…</Text>
+            <Text style={styles.message}>{t('common.loading')}</Text>
           ) : sortedTrips.length === 0 ? (
-            <Text style={styles.message}>Пока нет сохранённых поездок</Text>
+            <Text style={styles.message}>{t('trips.empty')}</Text>
           ) : (
             <FlatList
               data={sortedTrips}
@@ -97,20 +102,23 @@ export default function TripsScreen() {
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => {
-                const dates = tripDatesLabel(item);
+                const dates = tripDatesLabel(item, t);
                 const placesCount = item.places.length;
                 const visitedCount = item.places.filter((p) => p.visited).length;
                 return (
                   <Pressable
                     onPress={() => router.push(`/trips/${item.id}`)}
-                    style={styles.listItem}
+                    style={[
+                      styles.listItem,
+                      { backgroundColor: surfaces.cardItem },
+                    ]}
                     accessibilityRole="button"
-                    accessibilityLabel={`Открыть ${item.title}`}
+                    accessibilityLabel={t('common.openItem', { name: item.title })}
                   >
                     <MaterialCommunityIcons
                       name="bag-suitcase"
                       size={24}
-                      color={UI.primary}
+                      color={primary}
                       style={styles.tripIcon}
                     />
                     <View style={styles.listText}>
@@ -125,27 +133,33 @@ export default function TripsScreen() {
                         <MaterialCommunityIcons
                           name="chevron-right"
                           size={24}
-                          color={UI.primary}
+                          color={primary}
                         />
                       </View>
                       {item.current ? (
-                        <Text variant="bodySmall" style={styles.currentBadge}>
-                          Текущая поездка
+                        <Text variant="bodySmall" style={[styles.currentBadge, { color: primary }]}>
+                          {t('trips.currentTrip')}
                         </Text>
                       ) : null}
                       {dates ? (
-                        <Text
-                          variant="bodySmall"
-                          numberOfLines={1}
-                          style={styles.meta}
-                        >
+                      <Text
+                        variant="bodySmall"
+                        numberOfLines={1}
+                        style={[styles.meta, { color: surfaces.mutedText }]}
+                      >
                           {dates}
                         </Text>
                       ) : null}
-                      <Text variant="bodySmall" style={styles.meta}>
+                      <Text
+                        variant="bodySmall"
+                        style={[styles.meta, { color: surfaces.mutedText }]}
+                      >
                         {placesCount === 0
-                          ? 'Мест пока нет'
-                          : `Мест: ${visitedCount}/${placesCount}`}
+                          ? t('trips.placesNone')
+                          : t('trips.placesCount', {
+                              visited: visitedCount,
+                              total: placesCount,
+                            })}
                       </Text>
                     </View>
                   </Pressable>
@@ -159,7 +173,7 @@ export default function TripsScreen() {
             onPress={() => router.push('/trips/new')}
             style={styles.addButton}
           >
-            Добавить
+            {t('common.add')}
           </PrimaryButton>
         </View>
       </ScreenScaffold>
@@ -181,7 +195,6 @@ const styles = StyleSheet.create({
   },
   panel: {
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 12,
   },
@@ -190,7 +203,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     paddingVertical: 10,
     paddingHorizontal: 8,
   },
@@ -217,7 +229,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   meta: {
-    color: UI.mutedText,
     marginTop: 2,
   },
   message: {

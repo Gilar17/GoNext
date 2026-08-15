@@ -12,8 +12,10 @@ import {
   Text,
   TextInput,
 } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { listPlaces } from '@/src/db';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 import type { Place } from '@/src/types';
 
@@ -56,7 +58,9 @@ export function TripForm({
   saving = false,
   onSubmit,
 }: TripFormProps) {
+  const { t, i18n } = useTranslation();
   const isCreate = mode === 'create';
+  const { surfaces, primary } = useAppTheme();
   const [values, setValues] = useState<TripFormValues>({
     ...emptyValues,
     ...initialValues,
@@ -83,7 +87,7 @@ export function TripForm({
       } catch (e) {
         if (!cancelled) {
           setError(
-            e instanceof Error ? e.message : 'Не удалось загрузить места',
+            e instanceof Error ? e.message : t('errors.loadPlacesFailed'),
           );
         }
       } finally {
@@ -137,14 +141,14 @@ export function TripForm({
 
   const handleSubmit = async () => {
     if (!values.title.trim()) {
-      setError('Укажите название поездки');
+      setError(t('trips.titleRequired'));
       return;
     }
     setError(null);
     try {
       await onSubmit(values, selectedPlaceIds);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить поездку');
+      setError(e instanceof Error ? e.message : t('errors.saveTripFailed'));
     }
   };
 
@@ -154,9 +158,10 @@ export function TripForm({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator
     >
-      <View style={styles.panel}>
+      <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
         <TextInput
-          label="Название"
+          key={`trip-title-${i18n.language}`}
+          label={t('trips.name')}
           value={values.title}
           onChangeText={(text) => update('title', text)}
           mode="outlined"
@@ -165,7 +170,8 @@ export function TripForm({
         />
 
         <TextInput
-          label="Описание"
+          key={`trip-description-${i18n.language}`}
+          label={t('trips.description')}
           value={values.description}
           onChangeText={(text) => update('description', text)}
           mode="outlined"
@@ -176,11 +182,12 @@ export function TripForm({
         />
 
         <TextInput
-          label="Дата начала"
+          key={`trip-start-${i18n.language}`}
+          label={t('trips.startDate')}
           value={values.startDate}
           onChangeText={(text) => update('startDate', text)}
           mode="outlined"
-          placeholder="12.08.2026"
+          placeholder={t('trips.startDatePlaceholder')}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="numbers-and-punctuation"
@@ -189,11 +196,12 @@ export function TripForm({
         />
 
         <TextInput
-          label="Дата окончания"
+          key={`trip-end-${i18n.language}`}
+          label={t('trips.endDate')}
           value={values.endDate}
           onChangeText={(text) => update('endDate', text)}
           mode="outlined"
-          placeholder="25.08.2026"
+          placeholder={t('trips.endDatePlaceholder')}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="numbers-and-punctuation"
@@ -201,16 +209,16 @@ export function TripForm({
           dense
         />
         <HelperText type="info" style={styles.helper}>
-          Даты можно не указывать
+          {t('trips.datesOptional')}
         </HelperText>
 
         <View style={styles.switchRow}>
           <Text
-            style={styles.switchLabel}
+            style={[styles.switchLabel, { color: surfaces.bodyText }]}
             numberOfLines={1}
             textBreakStrategy="simple"
           >
-            Текущая поездка
+            {t('trips.currentTrip')}
           </Text>
           <Switch
             value={values.current}
@@ -221,13 +229,13 @@ export function TripForm({
         {isCreate ? (
           <>
             <Text variant="titleSmall" style={styles.sectionTitle}>
-              Места маршрута
+              {t('trips.routePlaces')}
             </Text>
             {placesLoading ? (
-              <Text style={styles.message}>Загрузка мест…</Text>
+              <Text style={styles.message}>{t('trips.loadingPlaces')}</Text>
             ) : places.length === 0 ? (
               <Text style={styles.message}>
-                Сначала добавьте места в разделе «Места»
+                {t('trips.addPlacesFirst')}
               </Text>
             ) : (
               <View style={styles.placesList}>
@@ -239,7 +247,11 @@ export function TripForm({
                       key={place.id}
                       style={[
                         styles.placeRow,
-                        selected ? styles.placeRowSelected : null,
+                        {
+                          backgroundColor: selected
+                            ? surfaces.filterIdle
+                            : surfaces.cardItem,
+                        },
                       ]}
                     >
                       <Pressable
@@ -255,7 +267,7 @@ export function TripForm({
                               : 'checkbox-blank-outline'
                           }
                           size={22}
-                          color={UI.primary}
+                          color={primary}
                         />
                         <View style={styles.placeText}>
                           <Text variant="titleSmall" numberOfLines={2}>
@@ -263,7 +275,7 @@ export function TripForm({
                           </Text>
                         </View>
                         {selected ? (
-                          <Text style={styles.orderBadge}>{orderIndex + 1}</Text>
+                          <Text style={[styles.orderBadge, { color: primary }]}>{orderIndex + 1}</Text>
                         ) : null}
                       </Pressable>
                       {selected ? (
@@ -272,24 +284,24 @@ export function TripForm({
                             onPress={() => moveSelected(place.id, -1)}
                             hitSlop={8}
                             style={styles.orderButton}
-                            accessibilityLabel="Выше в маршруте"
+                            accessibilityLabel={t('trips.moveUpInRoute')}
                           >
                             <MaterialCommunityIcons
                               name="chevron-up"
                               size={22}
-                              color={UI.primary}
+                              color={primary}
                             />
                           </Pressable>
                           <Pressable
                             onPress={() => moveSelected(place.id, 1)}
                             hitSlop={8}
                             style={styles.orderButton}
-                            accessibilityLabel="Ниже в маршруте"
+                            accessibilityLabel={t('trips.moveDownInRoute')}
                           >
                             <MaterialCommunityIcons
                               name="chevron-down"
                               size={22}
-                              color={UI.primary}
+                              color={primary}
                             />
                           </Pressable>
                         </View>
@@ -327,7 +339,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   panel: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 14,
   },
@@ -352,7 +363,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 14,
     lineHeight: 17,
-    color: '#333',
   },
   sectionTitle: {
     marginTop: 8,
@@ -369,12 +379,8 @@ const styles = StyleSheet.create({
   },
   placeRow: {
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     paddingVertical: 8,
     paddingHorizontal: 8,
-  },
-  placeRowSelected: {
-    backgroundColor: UI.filterIdle,
   },
   placeMain: {
     flexDirection: 'row',

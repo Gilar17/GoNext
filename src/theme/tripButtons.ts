@@ -3,6 +3,17 @@
  * Источник размеров — UI-константы GoNext.
  */
 import { UI } from '@/src/theme/ui';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
+
+export function useAccentStyles() {
+  const { primary } = useAppTheme();
+  return {
+    primary,
+    outline: { borderColor: primary },
+    filled: { borderColor: primary, backgroundColor: primary },
+    label: { color: primary },
+  };
+}
 
 export const TRIP_BUTTON = {
   height: UI.buttonHeight,

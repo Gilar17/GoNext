@@ -1,3 +1,5 @@
+import i18n, { getDateLocale } from '@/src/i18n';
+
 /**
  * Даты поездок: UI — DD.MM.YYYY, хранение — YYYY-MM-DD.
  */
@@ -57,7 +59,7 @@ function parseDateParts(value: string): DateParts | null {
 /** Отображение даты в UI: DD.MM.YYYY */
 export function formatDateLabel(value: string | null | undefined): string {
   if (!value) {
-    return 'Не указана';
+    return i18n.t('common.notSpecifiedFeminine');
   }
   const parts = parseDateParts(value);
   if (!parts) {
@@ -68,14 +70,14 @@ export function formatDateLabel(value: string | null | undefined): string {
 
 export function formatDateTimeLabel(value: string | null | undefined): string {
   if (!value) {
-    return 'Не указано';
+    return i18n.t('common.notSpecifiedNeuter');
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     const parts = parseDateParts(value);
     return parts ? formatParts(parts) : value;
   }
-  return date.toLocaleString('ru-RU');
+  return date.toLocaleString(getDateLocale());
 }
 
 /** Storage / ISO → строка для поля формы (DD.MM.YYYY) или ''. */
@@ -98,7 +100,7 @@ export function toStorageDate(value: string): string | null {
   }
   const parts = parseDateParts(trimmed);
   if (!parts) {
-    throw new Error('Укажите дату в формате ДД.ММ.ГГГГ');
+    throw new Error(i18n.t('errors.invalidDate'));
   }
   return toStorageParts(parts);
 }

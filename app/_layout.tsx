@@ -10,7 +10,10 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { PaperProvider, Text } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { I18nextProvider, useTranslation } from 'react-i18next';
 import { initDatabase } from '@/src/db';
+import i18n, { initI18n, normalizeLanguage } from '@/src/i18n';
+import { AppThemeProvider, useAppTheme } from '@/src/theme/AppThemeProvider';
 
 function PaperIcon({
   name,
@@ -30,22 +33,28 @@ function PaperIcon({
   );
 }
 
-export default function RootLayout() {
-  const [ready, setReady] = useState(false);
+function ThemedApp() {
+  const { i18n: i18nInstance } = useTranslation();
+  const language = normalizeLanguage(i18nInstance.language);
+  const { ready: themeReady, colorScheme, paperTheme, surfaces } =
+    useAppTheme();
+  const [bootReady, setBootReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDark = colorScheme === 'dark';
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
+        await initI18n();
         await initDatabase();
         if (!cancelled) {
-          setReady(true);
+          setBootReady(true);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
-          setError('Не удалось запустить приложение');
+          setError(i18n.t('errors.appStartFailed'));
         }
       }
     })();
@@ -55,37 +64,64 @@ export default function RootLayout() {
     };
   }, []);
 
+  const ready = bootReady && themeReady;
+
+  const content = error ? (
+    <View style={styles.center}>
+      <Text variant="bodyLarge">{error}</Text>
+    </View>
+  ) : !ready ? (
+    <View style={styles.center}>
+      <ActivityIndicator />
+    </View>
+  ) : (
+    <Stack
+      key={language}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: 'transparent' },
+      }}
+    />
+  );
+
   return (
-    <SafeAreaProvider>
-      <PaperProvider
-        settings={{
-          icon: (props) => <PaperIcon {...props} />,
-        }}
-      >
-        <StatusBar style="auto" />
+    <PaperProvider
+      theme={paperTheme}
+      settings={{
+        icon: (props) => <PaperIcon {...props} />,
+      }}
+    >
+      <StatusBar style={isDark ? 'light' : 'auto'} />
+      {isDark ? (
+        <View
+          style={[
+            styles.background,
+            { backgroundColor: surfaces.appBackground },
+          ]}
+        >
+          {content}
+        </View>
+      ) : (
         <ImageBackground
           source={require('../assets/backgrounds/gonext-bg.png')}
           style={styles.background}
           resizeMode="cover"
         >
-          {error ? (
-            <View style={styles.center}>
-              <Text variant="bodyLarge">{error}</Text>
-            </View>
-          ) : !ready ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-            </View>
-          ) : (
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: 'transparent' },
-              }}
-            />
-          )}
+          {content}
         </ImageBackground>
-      </PaperProvider>
+      )}
+    </PaperProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <SafeAreaProvider>
+      <I18nextProvider i18n={i18n}>
+        <AppThemeProvider>
+          <ThemedApp />
+        </AppThemeProvider>
+      </I18nextProvider>
     </SafeAreaProvider>
   );
 }

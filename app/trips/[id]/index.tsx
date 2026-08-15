@@ -17,6 +17,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FilterToggleButton } from '@/src/components/FilterToggleButton';
 import { PlacePhotoGallery } from '@/src/components/PlacePhotoGallery';
@@ -47,8 +48,10 @@ import {
   tripOutlineButtonStyle,
   tripOutlineIconLabelStyle,
   tripOutlineLabelStyle,
+  useAccentStyles,
 } from '@/src/theme/tripButtons';
 import { UI } from '@/src/theme/ui';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import {
   formatDateLabel,
   formatDateTimeLabel,
@@ -85,11 +88,12 @@ function RouteActionButton({
   disabled = false,
   onPress,
 }: RouteActionButtonProps) {
+  const accent = useAccentStyles();
   const textColor = disabled
     ? UI.mutedText
     : filled
       ? UI.onPrimary
-      : UI.primary;
+      : accent.primary;
 
   return (
     <Button
@@ -97,12 +101,13 @@ function RouteActionButton({
       icon={icon ? tripIcon(icon) : undefined}
       disabled={disabled}
       onPress={onPress}
-      buttonColor={filled ? UI.primary : undefined}
+      buttonColor={filled ? accent.primary : undefined}
       textColor={textColor}
       theme={tripButtonTheme}
       style={[
         styles.routeActionButton,
         filled ? tripFilledButtonStyle : tripOutlineButtonStyle,
+        filled ? accent.filled : accent.outline,
         disabled ? styles.routeActionDisabled : null,
       ]}
       contentStyle={tripButtonContentStyle}
@@ -176,9 +181,12 @@ function isTripEnded(endDate: string | null): boolean {
 
 export default function TripDetailsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const theme = useTheme();
+  const { surfaces, primary } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
+  const accent = useAccentStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const tripId = Number(id);
 
@@ -195,7 +203,7 @@ export default function TripDetailsScreen() {
 
   const loadTrip = useCallback(async () => {
     if (!Number.isFinite(tripId)) {
-      setError('Некорректный идентификатор поездки');
+      setError(t('errors.invalidTripId'));
       setLoading(false);
       return;
     }
@@ -208,13 +216,13 @@ export default function TripDetailsScreen() {
       ]);
       setTrip(data);
       setPlacesById(new Map(allPlaces.map((place) => [place.id, place])));
-      setError(data ? null : 'Поездка не найдена');
+      setError(data ? null : t('errors.tripNotFound'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить поездку');
+      setError(e instanceof Error ? e.message : t('errors.loadTripFailed'));
     } finally {
       setLoading(false);
     }
-  }, [tripId]);
+  }, [tripId, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -252,7 +260,7 @@ export default function TripDetailsScreen() {
       await deleteTrip(tripId);
       router.replace('/trips');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось удалить поездку');
+      setError(e instanceof Error ? e.message : t('errors.deleteTripFailed'));
     }
   };
 
@@ -268,7 +276,7 @@ export default function TripDetailsScreen() {
       }
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Не удалось сделать поездку текущей',
+        e instanceof Error ? e.message : t('errors.setCurrentTripFailed'),
       );
     }
   };
@@ -295,7 +303,7 @@ export default function TripDetailsScreen() {
       const places = await reorderTripPlaces(tripId, next);
       setTrip({ ...trip, places });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось изменить порядок');
+      setError(e instanceof Error ? e.message : t('errors.reorderFailed'));
     }
   };
 
@@ -316,7 +324,7 @@ export default function TripDetailsScreen() {
         setError(
           e instanceof Error
             ? e.message
-            : 'Не удалось обновить статус посещения',
+            : t('errors.visitStatusFailed'),
         );
       } finally {
         setBusyId(null);
@@ -344,7 +352,7 @@ export default function TripDetailsScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Не удалось обновить статус посещения',
+          : t('errors.visitStatusFailed'),
       );
     } finally {
       setBusyId(null);
@@ -379,7 +387,7 @@ export default function TripDetailsScreen() {
       await loadTrip();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Не удалось убрать место из поездки',
+        e instanceof Error ? e.message : t('errors.removePlaceFromTripFailed'),
       );
     }
   };
@@ -391,7 +399,7 @@ export default function TripDetailsScreen() {
       await loadTrip();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Не удалось добавить место в поездку',
+        e instanceof Error ? e.message : t('errors.addPlaceToTripFailed'),
       );
     }
   };
@@ -403,7 +411,7 @@ export default function TripDetailsScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Для этого места не указаны корректные координаты',
+          : t('errors.invalidCoordinates'),
       );
     }
   };
@@ -411,7 +419,7 @@ export default function TripDetailsScreen() {
   const pickPhotos = async (tripPlaceId: number) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError('Нет доступа к галерее');
+      setError(t('errors.galleryDenied'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -428,14 +436,14 @@ export default function TripDetailsScreen() {
       }
       await loadTrip();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось добавить фото');
+      setError(e instanceof Error ? e.message : t('errors.addPhotoFailed'));
     }
   };
 
   const takePhoto = async (tripPlaceId: number) => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      setError('Нет доступа к камере');
+      setError(t('errors.cameraDenied'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
@@ -446,7 +454,7 @@ export default function TripDetailsScreen() {
       await addTripPlacePhoto(tripPlaceId, result.assets[0].uri);
       await loadTrip();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось добавить фото');
+      setError(e instanceof Error ? e.message : t('errors.addPhotoFailed'));
     }
   };
 
@@ -455,7 +463,7 @@ export default function TripDetailsScreen() {
       await deleteTripPlacePhoto(photoId);
       await loadTrip();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось удалить фото');
+      setError(e instanceof Error ? e.message : t('errors.deletePhotoFailed'));
     }
   };
 
@@ -472,7 +480,7 @@ export default function TripDetailsScreen() {
   return (
     <>
       <ScreenScaffold
-        title="Поездка"
+        title={t('trips.detailsTitle')}
         contentStyle={[
           styles.content,
           { paddingBottom: Math.max(insets.bottom, 8) },
@@ -484,19 +492,19 @@ export default function TripDetailsScreen() {
                 onPress={() => router.push(`/trips/${trip.id}/edit`)}
                 hitSlop={12}
                 style={styles.headerAction}
-                accessibilityLabel="Изменить"
+                accessibilityLabel={t('common.edit')}
               >
                 <MaterialCommunityIcons
                   name="pencil"
                   size={22}
-                  color={UI.primary}
+                  color={primary}
                 />
               </Pressable>
               <Pressable
                 onPress={() => setDeleteVisible(true)}
                 hitSlop={12}
                 style={styles.headerAction}
-                accessibilityLabel="Удалить"
+                accessibilityLabel={t('common.delete')}
               >
                 <MaterialCommunityIcons
                   name="delete"
@@ -509,74 +517,76 @@ export default function TripDetailsScreen() {
         }
       >
         {loading ? (
-          <Text>Загрузка…</Text>
+          <Text>{t('common.loading')}</Text>
         ) : trip ? (
           <ScrollView
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.panel}>
+            <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
               <Text variant="headlineSmall" style={styles.tripTitle}>
                 {trip.title}
               </Text>
 
               {trip.current ? (
-                <Text style={styles.currentBadge}>Текущая поездка</Text>
+                <Text style={[styles.currentBadge, { color: primary }]}>
+                  {t('trips.currentTrip')}
+                </Text>
               ) : tripEnded ? null : (
                 <Button
                   mode="outlined"
                   icon={tripIcon('check-circle-outline')}
                   onPress={handleSetCurrent}
-                  textColor={UI.primary}
+                  textColor={primary}
                   theme={tripButtonTheme}
-                  style={styles.outlineButton}
+                  style={[styles.outlineButton, accent.outline]}
                   contentStyle={tripButtonContentStyle}
-                  labelStyle={tripOutlineIconLabelStyle}
+                  labelStyle={[tripOutlineIconLabelStyle, accent.label]}
                 >
-                  Сделать текущей
+                  {t('trips.makeCurrent')}
                 </Button>
               )}
 
               <Text variant="titleSmall" style={styles.label}>
-                Описание
+                {t('trips.description')}
               </Text>
               <Text variant="bodyLarge">
-                {trip.description.trim() || 'Без описания'}
+                {trip.description.trim() || t('common.noDescription')}
               </Text>
 
               <Text variant="titleSmall" style={styles.labelMuted}>
-                Даты
+                {t('trips.dates')}
               </Text>
               <Text variant="bodyMedium" style={styles.mutedValue}>
-                {datesLabel ?? 'Не указаны'}
+                {datesLabel ?? t('common.notSpecified')}
               </Text>
 
               <Text variant="titleSmall" style={styles.labelMuted}>
-                Создано
+                {t('trips.created')}
               </Text>
               <Text variant="bodyMedium" style={styles.mutedValue}>
                 {formatDateTimeLabel(trip.createdAt)}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
-                Маршрут
+                {t('trips.route')}
               </Text>
               <View style={styles.filters}>
                 <FilterToggleButton
-                  label="Все"
+                  label={t('trips.filterAll')}
                   icon="format-list-bulleted"
                   active={routeMode === 'all'}
                   onPress={() => setRouteMode('all')}
                 />
                 <FilterToggleButton
-                  label="План"
+                  label={t('trips.filterPlan')}
                   icon="map-marker-path"
                   active={routeMode === 'plan'}
                   onPress={() => setRouteMode('plan')}
                 />
                 <FilterToggleButton
-                  label="Дневник"
+                  label={t('trips.filterDiary')}
                   icon="book-open-variant"
                   active={routeMode === 'diary'}
                   onPress={() => setRouteMode('diary')}
@@ -586,12 +596,12 @@ export default function TripDetailsScreen() {
               {filteredPlaces.length === 0 ? (
                 <Text style={styles.message}>
                   {trip.places.length === 0
-                    ? 'В маршруте пока нет мест'
+                    ? t('trips.routeEmpty')
                     : routeMode === 'plan'
-                      ? 'Непосещённых мест нет — маршрут пройден'
+                      ? t('trips.routeAllVisited')
                       : routeMode === 'diary'
-                        ? 'Пока нет посещённых мест'
-                        : 'Нет мест'}
+                        ? t('trips.routeNoVisited')
+                        : t('trips.noPlaces')}
                 </Text>
               ) : (
                 filteredPlaces.map((tripPlace, index) => {
@@ -609,12 +619,18 @@ export default function TripDetailsScreen() {
                   const showDiaryFields = tripPlace.visited;
 
                   return (
-                    <View key={tripPlace.id} style={styles.tripPlaceCard}>
+                    <View
+                      key={tripPlace.id}
+                      style={[
+                        styles.tripPlaceCard,
+                        { backgroundColor: surfaces.cardItem },
+                      ]}
+                    >
                       <View style={styles.tripPlaceHeader}>
-                        <Text style={styles.orderBadge}>{orderNumber}</Text>
+                        <Text style={[styles.orderBadge, { color: primary }]}>{orderNumber}</Text>
                         <View style={styles.tripPlaceTitleWrap}>
                           <Text variant="titleMedium" numberOfLines={2}>
-                            {place?.name ?? `Место #${tripPlace.placeId}`}
+                            {place?.name ?? t('common.placeFallback', { id: tripPlace.placeId })}
                           </Text>
                         </View>
                         <View style={styles.reorderColumn}>
@@ -625,7 +641,7 @@ export default function TripDetailsScreen() {
                             hitSlop={10}
                             disabled={moveLocked || isFirst}
                             style={styles.reorderButton}
-                            accessibilityLabel="Выше"
+                            accessibilityLabel={t('trips.moveUp')}
                           >
                             <MaterialCommunityIcons
                               name="chevron-up"
@@ -633,7 +649,7 @@ export default function TripDetailsScreen() {
                               color={
                                 moveLocked || isFirst
                                   ? UI.mutedText
-                                  : UI.primary
+                                  : primary
                               }
                             />
                           </Pressable>
@@ -642,7 +658,7 @@ export default function TripDetailsScreen() {
                             hitSlop={10}
                             disabled={moveLocked || isLast}
                             style={styles.reorderButton}
-                            accessibilityLabel="Ниже"
+                            accessibilityLabel={t('trips.moveDown')}
                           >
                             <MaterialCommunityIcons
                               name="chevron-down"
@@ -650,7 +666,7 @@ export default function TripDetailsScreen() {
                               color={
                                 moveLocked || isLast
                                   ? UI.mutedText
-                                  : UI.primary
+                                  : primary
                               }
                             />
                           </Pressable>
@@ -662,25 +678,25 @@ export default function TripDetailsScreen() {
                           mode="outlined"
                           icon={tripIcon('map-marker')}
                           onPress={() => void handleOpenMap(place)}
-                          textColor={UI.primary}
+                          textColor={primary}
                           theme={tripButtonTheme}
-                          style={styles.mapButton}
+                          style={[styles.mapButton, accent.outline]}
                           contentStyle={tripButtonContentStyle}
-                          labelStyle={tripOutlineIconLabelStyle}
+                          labelStyle={[tripOutlineIconLabelStyle, accent.label]}
                         >
-                          Открыть на карте
+                          {t('places.openOnMap')}
                         </Button>
                       ) : null}
 
                       <View style={styles.actionsRow}>
                         <RouteActionButton
-                          label="Уже был"
+                          label={t('trips.alreadyBeen')}
                           filled={tripPlace.visited}
                           disabled={busyId === tripPlace.id}
                           onPress={() => void handleToggleVisited(tripPlace)}
                         />
                         <RouteActionButton
-                          label="Удалить"
+                          label={t('common.delete')}
                           icon="delete"
                           onPress={() => setRemovePlaceId(tripPlace.id)}
                         />
@@ -690,8 +706,9 @@ export default function TripDetailsScreen() {
                         <>
                           {tripPlace.visitDate ? (
                             <Text variant="bodySmall" style={styles.meta}>
-                              Дата визита:{' '}
-                              {formatDateTimeLabel(tripPlace.visitDate)}
+                              {t('trips.visitDate', {
+                                date: formatDateTimeLabel(tripPlace.visitDate),
+                              })}
                             </Text>
                           ) : null}
 
@@ -705,38 +722,40 @@ export default function TripDetailsScreen() {
                           />
 
                           <Text variant="titleSmall" style={styles.cardLabel}>
-                            Фото посещения
+                            {t('trips.visitPhotos')}
                           </Text>
                           <View style={styles.photoActions}>
                             <Button
                               mode="outlined"
                               icon={tripIcon('image-plus')}
                               onPress={() => void pickPhotos(tripPlace.id)}
-                              textColor={UI.primary}
+                              textColor={primary}
                               theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
                                 styles.photoActionButton,
+                                accent.outline,
                               ]}
                               contentStyle={tripButtonContentStyle}
-                              labelStyle={tripOutlineIconLabelStyle}
+                              labelStyle={[tripOutlineIconLabelStyle, accent.label]}
                             >
-                              Галерея
+                              {t('common.gallery')}
                             </Button>
                             <Button
                               mode="outlined"
                               icon={tripIcon('camera')}
                               onPress={() => void takePhoto(tripPlace.id)}
-                              textColor={UI.primary}
+                              textColor={primary}
                               theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
                                 styles.photoActionButton,
+                                accent.outline,
                               ]}
                               contentStyle={tripButtonContentStyle}
-                              labelStyle={tripOutlineIconLabelStyle}
+                              labelStyle={[tripOutlineIconLabelStyle, accent.label]}
                             >
-                              Камера
+                              {t('common.camera')}
                             </Button>
                           </View>
                           <PlacePhotoGallery
@@ -757,12 +776,12 @@ export default function TripDetailsScreen() {
                 onPress={() => setAddPlaceVisible(true)}
                 style={styles.addPlaceButton}
               >
-                Добавить место
+                {t('trips.addPlace')}
               </PrimaryButton>
             </View>
           </ScrollView>
         ) : (
-          <Text>Поездка не найдена</Text>
+          <Text>{t('errors.tripNotFound')}</Text>
         )}
       </ScreenScaffold>
 
@@ -771,18 +790,18 @@ export default function TripDetailsScreen() {
           visible={deleteVisible}
           onDismiss={() => setDeleteVisible(false)}
         >
-          <Dialog.Title>Удалить поездку?</Dialog.Title>
+          <Dialog.Title>{t('trips.deleteTripTitle')}</Dialog.Title>
           <Dialog.Content>
             <Text>
-              Вы действительно хотите удалить «{trip?.title ?? ''}»?
+              {t('trips.deleteTripBody', { name: trip?.title ?? '' })}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setDeleteVisible(false)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               textColor={theme.colors.error}
@@ -790,7 +809,7 @@ export default function TripDetailsScreen() {
                 void handleDelete();
               }}
             >
-              Удалить
+              {t('common.delete')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -799,19 +818,16 @@ export default function TripDetailsScreen() {
           visible={cannotUnvisitVisible}
           onDismiss={() => setCannotUnvisitVisible(false)}
         >
-          <Dialog.Title>Нельзя отменить посещение</Dialog.Title>
+          <Dialog.Title>{t('trips.cannotUnvisitTitle')}</Dialog.Title>
           <Dialog.Content>
-            <Text>
-              Для этого места уже сохранены заметки или фотографии посещения.
-              Сначала удалите их.
-            </Text>
+            <Text>{t('trips.cannotUnvisitBody')}</Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setCannotUnvisitVisible(false)}
             >
-              Понятно
+              {t('common.ok')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -820,19 +836,16 @@ export default function TripDetailsScreen() {
           visible={removePlaceId != null}
           onDismiss={() => setRemovePlaceId(null)}
         >
-          <Dialog.Title>Убрать место из поездки?</Dialog.Title>
+          <Dialog.Title>{t('trips.removePlaceTitle')}</Dialog.Title>
           <Dialog.Content>
-            <Text>
-              Место будет убрано только из этой поездки. Само место в разделе
-              «Места» останется.
-            </Text>
+            <Text>{t('trips.removePlaceBody')}</Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setRemovePlaceId(null)}
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               textColor={theme.colors.error}
@@ -840,7 +853,7 @@ export default function TripDetailsScreen() {
                 void confirmRemovePlace();
               }}
             >
-              Удалить
+              {t('common.delete')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -849,11 +862,11 @@ export default function TripDetailsScreen() {
           visible={addPlaceVisible}
           onDismiss={() => setAddPlaceVisible(false)}
         >
-          <Dialog.Title>Добавить место</Dialog.Title>
+          <Dialog.Title>{t('trips.addPlace')}</Dialog.Title>
           <Dialog.ScrollArea style={styles.addPlaceScroll}>
             {availablePlacesToAdd.length === 0 ? (
               <Text style={styles.message}>
-                Нет доступных мест. Создайте место в разделе «Места».
+                {t('trips.noPlacesToAdd')}
               </Text>
             ) : (
               availablePlacesToAdd.map((place) => (
@@ -865,7 +878,7 @@ export default function TripDetailsScreen() {
                   <MaterialCommunityIcons
                     name="map-marker"
                     size={20}
-                    color={UI.primary}
+                    color={primary}
                   />
                   <View style={styles.addPlaceText}>
                     <Text variant="titleSmall" numberOfLines={2}>
@@ -883,10 +896,10 @@ export default function TripDetailsScreen() {
           </Dialog.ScrollArea>
           <Dialog.Actions>
             <Button
-              textColor={UI.primary}
+              textColor={primary}
               onPress={() => setAddPlaceVisible(false)}
             >
-              Закрыть
+              {t('common.close')}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -908,7 +921,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   panel: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 16,
     paddingBottom: 20,
@@ -932,7 +944,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   currentBadge: {
-    color: UI.primary,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -960,7 +971,6 @@ const styles = StyleSheet.create({
   },
   tripPlaceCard: {
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     padding: 10,
     marginBottom: 10,
     gap: 6,
@@ -973,7 +983,6 @@ const styles = StyleSheet.create({
   orderBadge: {
     minWidth: 24,
     textAlign: 'center',
-    color: UI.primary,
     fontWeight: '700',
     fontSize: 16,
     marginTop: 2,

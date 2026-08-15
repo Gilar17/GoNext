@@ -16,6 +16,7 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { getCurrentDdPair, isValidDdPair } from '@/src/services';
@@ -24,6 +25,7 @@ import {
   primaryButtonStyle,
   UI,
 } from '@/src/theme/ui';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import type { PlacePhoto } from '@/src/types';
 
 export type PlaceFormValues = {
@@ -70,6 +72,7 @@ export function PlaceForm({
   onSubmit,
   onDeleteExistingPhoto,
 }: PlaceFormProps) {
+  const { t, i18n } = useTranslation();
   const isEdit = mode === 'edit';
   const [values, setValues] = useState<PlaceFormValues>({
     ...emptyValues,
@@ -81,6 +84,7 @@ export function PlaceForm({
   const [locationLoading, setLocationLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewPhoto | null>(null);
   const theme = useTheme();
+  const { surfaces, primary } = useAppTheme();
 
   const ddInvalid = !isValidDdPair(values.dd);
 
@@ -94,7 +98,7 @@ export function PlaceForm({
   const pickPhotos = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError('Нет доступа к галерее');
+      setError(t('errors.galleryDenied'));
       return;
     }
 
@@ -113,7 +117,7 @@ export function PlaceForm({
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      setError('Нет доступа к камере');
+      setError(t('errors.cameraDenied'));
       return;
     }
 
@@ -135,11 +139,7 @@ export function PlaceForm({
       setLocationError(null);
     } catch (e) {
       const message = e instanceof Error ? e.message : '';
-      setLocationError(
-        message === 'Нет доступа к геопозиции'
-          ? 'Нет доступа к геолокации'
-          : 'Не удалось получить координаты',
-      );
+      setLocationError(message || t('errors.locationUnavailable'));
     } finally {
       setLocationLoading(false);
     }
@@ -147,7 +147,7 @@ export function PlaceForm({
 
   const handleSubmit = async () => {
     if (!values.name.trim()) {
-      setError('Укажите название места');
+      setError(t('places.nameRequired'));
       return;
     }
     if (ddInvalid) {
@@ -158,7 +158,7 @@ export function PlaceForm({
     try {
       await onSubmit(values, pendingPhotoUris);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить место');
+      setError(e instanceof Error ? e.message : t('errors.savePlaceFailed'));
     }
   };
 
@@ -169,9 +169,10 @@ export function PlaceForm({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator
       >
-        <View style={styles.panel}>
+        <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
           <TextInput
-            label="Название"
+            key={`place-name-${i18n.language}`}
+            label={t('places.name')}
             value={values.name}
             onChangeText={(text) => update('name', text)}
             mode="outlined"
@@ -180,7 +181,8 @@ export function PlaceForm({
           />
 
           <TextInput
-            label="Описание"
+            key={`place-description-${i18n.language}`}
+            label={t('places.description')}
             value={values.description}
             onChangeText={(text) => update('description', text)}
             mode="outlined"
@@ -193,11 +195,11 @@ export function PlaceForm({
           <View style={styles.switchesRow}>
             <View style={[styles.switchItem, styles.switchItemVisitlater]}>
               <Text
-                style={styles.switchLabel}
+                style={[styles.switchLabel, { color: surfaces.bodyText }]}
                 numberOfLines={2}
                 textBreakStrategy="simple"
               >
-                Посетить позже
+                {t('places.visitLater')}
               </Text>
               <Switch
                 value={values.visitlater}
@@ -206,11 +208,11 @@ export function PlaceForm({
             </View>
             <View style={[styles.switchItem, styles.switchItemLiked]}>
               <Text
-                style={styles.switchLabelSingle}
+                style={[styles.switchLabelSingle, { color: surfaces.bodyText }]}
                 numberOfLines={1}
                 textBreakStrategy="simple"
               >
-                Понравилось
+                {t('places.liked')}
               </Text>
               <Switch
                 value={values.liked}
@@ -220,11 +222,12 @@ export function PlaceForm({
           </View>
 
           <TextInput
-            label="Координаты (DD)"
+            key={`place-dd-${i18n.language}`}
+            label={t('places.coordinates')}
             value={values.dd}
             onChangeText={(text) => update('dd', text)}
             mode="outlined"
-            placeholder="55.744920, 37.604677"
+            placeholder={t('places.coordinatesPlaceholder')}
             autoCapitalize="none"
             autoCorrect={false}
             error={ddInvalid}
@@ -234,10 +237,10 @@ export function PlaceForm({
           <Text
             style={[
               styles.ddHint,
-              ddInvalid ? { color: theme.colors.error } : null,
+              { color: ddInvalid ? theme.colors.error : surfaces.mutedText },
             ]}
           >
-            Формат: 55.744920, 37.604677
+            {t('places.coordinatesHint')}
           </Text>
 
           {isEdit ? (
@@ -247,11 +250,15 @@ export function PlaceForm({
                 icon="crosshairs-gps"
                 onPress={fillCurrentLocation}
                 loading={locationLoading}
-                textColor={UI.primary}
-                style={[styles.field, styles.outlineButton]}
+                textColor={primary}
+                style={[
+                  styles.field,
+                  styles.outlineButton,
+                  { borderColor: primary },
+                ]}
                 contentStyle={primaryButtonContentStyle}
               >
-                Текущая геопозиция
+                {t('places.currentLocation')}
               </Button>
               {locationError ? (
                 <Text
@@ -264,7 +271,7 @@ export function PlaceForm({
           ) : null}
 
           <Text variant="titleSmall" style={styles.sectionTitle}>
-            Фотографии
+            {t('places.photos')}
           </Text>
 
           {isEdit ? (
@@ -273,21 +280,29 @@ export function PlaceForm({
                 mode="outlined"
                 icon="image-plus"
                 onPress={pickPhotos}
-                textColor={UI.primary}
-                style={[styles.outlineButton, styles.photoActionButton]}
+                textColor={primary}
+                style={[
+                  styles.outlineButton,
+                  styles.photoActionButton,
+                  { borderColor: primary },
+                ]}
                 contentStyle={primaryButtonContentStyle}
               >
-                Добавить фото
+                {t('places.addPhoto')}
               </Button>
               <Button
                 mode="outlined"
                 icon="camera"
                 onPress={takePhoto}
-                textColor={UI.primary}
-                style={[styles.outlineButton, styles.photoActionButton]}
+                textColor={primary}
+                style={[
+                  styles.outlineButton,
+                  styles.photoActionButton,
+                  { borderColor: primary },
+                ]}
                 contentStyle={primaryButtonContentStyle}
               >
-                Камера
+                {t('common.camera')}
               </Button>
             </View>
           ) : (
@@ -295,11 +310,15 @@ export function PlaceForm({
               mode="outlined"
               icon="image-plus"
               onPress={pickPhotos}
-              textColor={UI.primary}
-              style={[styles.field, styles.outlineButton]}
+              textColor={primary}
+              style={[
+                styles.field,
+                styles.outlineButton,
+                { borderColor: primary },
+              ]}
               contentStyle={primaryButtonContentStyle}
             >
-              Добавить фото
+              {t('places.addPhoto')}
             </Button>
           )}
 
@@ -318,9 +337,9 @@ export function PlaceForm({
                 </Pressable>
                 {onDeleteExistingPhoto ? (
                   <Pressable
-                    style={styles.removePhoto}
+                    style={[styles.removePhoto, { backgroundColor: primary }]}
                     onPress={() => onDeleteExistingPhoto(photo.id)}
-                    accessibilityLabel="Удалить фото"
+                    accessibilityLabel={t('places.deletePhoto')}
                   >
                     <MaterialCommunityIcons
                       name="close"
@@ -339,13 +358,13 @@ export function PlaceForm({
                   <Image source={{ uri }} style={styles.photo} />
                 </Pressable>
                 <Pressable
-                  style={styles.removePhoto}
+                  style={[styles.removePhoto, { backgroundColor: primary }]}
                   onPress={() =>
                     setPendingPhotoUris((prev) =>
                       prev.filter((item) => item !== uri),
                     )
                   }
-                  accessibilityLabel="Удалить фото"
+                  accessibilityLabel={t('places.deletePhoto')}
                 >
                   <MaterialCommunityIcons
                     name="close"
@@ -390,9 +409,9 @@ export function PlaceForm({
               />
             ) : null}
             <Pressable
-              style={styles.modalClose}
+              style={[styles.modalClose, { backgroundColor: primary }]}
               onPress={() => setPreview(null)}
-              accessibilityLabel="Закрыть просмотр"
+              accessibilityLabel={t('places.closePreview')}
             >
               <MaterialCommunityIcons name="close" size={18} color={UI.onPrimary} />
             </Pressable>
@@ -409,7 +428,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   panel: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 14,
   },
@@ -422,7 +440,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     fontSize: 12,
     lineHeight: 16,
-    color: UI.mutedText,
   },
   locationError: {
     marginTop: -2,
@@ -457,14 +474,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 14,
     lineHeight: 17,
-    color: '#333',
   },
   /** Однострочная подпись: слово целиком, без переноса по буквам. */
   switchLabelSingle: {
     flexShrink: 0,
     fontSize: 14,
     lineHeight: 17,
-    color: '#333',
   },
   sectionTitle: {
     marginTop: 6,
@@ -501,7 +516,6 @@ const styles = StyleSheet.create({
     width: 104,
     height: 104,
     borderRadius: UI.buttonBorderRadius,
-    backgroundColor: '#EEE',
   },
   removePhoto: {
     position: 'absolute',

@@ -10,11 +10,13 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Searchbar, Snackbar, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { FilterToggleButton } from '@/src/components/FilterToggleButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { listPlaces } from '@/src/db';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 import { matchesPlaceName } from '@/src/utils/search';
 import type { Place } from '@/src/types';
@@ -28,7 +30,9 @@ const CONTENT_EDGE_GAP = 12;
 
 export default function PlacesScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { surfaces, primary } = useAppTheme();
 
   const [places, setPlaces] = useState<Place[]>([]);
   const [query, setQuery] = useState('');
@@ -65,11 +69,11 @@ export default function PlacesScreen() {
       setPlaces(data);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить места');
+      setError(e instanceof Error ? e.message : t('errors.loadPlacesFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,7 +135,7 @@ export default function PlacesScreen() {
   return (
     <View style={styles.root}>
       <ScreenScaffold
-        title="Места"
+        title={t('places.title')}
         titleIcon="map-marker"
         contentStyle={[
           styles.content,
@@ -142,34 +146,36 @@ export default function PlacesScreen() {
           <View
             style={[
               styles.panel,
+              { backgroundColor: surfaces.card },
               areaHeight > 0 ? { maxHeight: areaHeight } : null,
             ]}
           >
             <View onLayout={onTopChromeLayout}>
               <Searchbar
+                key={`places-search-${i18n.language}`}
                 ref={searchRef}
-                placeholder="Поиск по названию"
+                placeholder={t('places.searchPlaceholder')}
                 value={query}
                 onChangeText={handleQueryChange}
                 clearIcon="close"
-                clearAccessibilityLabel="Очистить поиск"
+                clearAccessibilityLabel={t('places.clearSearch')}
                 onClearIconPress={clearSearch}
                 icon="magnify"
                 iconColor={UI.onPrimary}
                 placeholderTextColor="rgba(255,255,255,0.85)"
-                style={styles.search}
+                style={[styles.search, { backgroundColor: primary }]}
                 inputStyle={styles.searchInput}
               />
 
               <View style={styles.filters}>
                 <FilterToggleButton
-                  label="Посетить позже"
+                  label={t('places.visitLater')}
                   icon="clock-outline"
                   active={filterVisitLater}
                   onPress={() => setFilterVisitLater((value) => !value)}
                 />
                 <FilterToggleButton
-                  label="Понравилось"
+                  label={t('places.liked')}
                   icon="heart"
                   active={filterLiked}
                   onPress={() => setFilterLiked((value) => !value)}
@@ -179,28 +185,33 @@ export default function PlacesScreen() {
               {hasActiveFilters ? (
                 <Pressable
                   onPress={resetFilters}
-                  style={styles.resetFilters}
+                  style={[
+                    styles.resetFilters,
+                    { backgroundColor: surfaces.filterIdle },
+                  ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Сбросить фильтры"
+                  accessibilityLabel={t('places.resetFilters')}
                 >
                   <MaterialCommunityIcons
                     name="close"
                     size={18}
-                    color={UI.primary}
+                    color={primary}
                     style={styles.resetIcon}
                   />
-                  <Text style={styles.resetLabel}>Сбросить фильтры</Text>
+                  <Text style={[styles.resetLabel, { color: primary }]}>
+                    {t('places.resetFilters')}
+                  </Text>
                 </Pressable>
               ) : null}
             </View>
 
             {loading ? (
-              <Text style={styles.message}>Загрузка…</Text>
+              <Text style={styles.message}>{t('common.loading')}</Text>
             ) : filteredPlaces.length === 0 ? (
               <Text style={styles.message}>
                 {places.length === 0
-                  ? 'Пока нет сохранённых мест'
-                  : 'Ничего не найдено по текущим фильтрам'}
+                  ? t('places.empty')
+                  : t('places.emptyFiltered')}
               </Text>
             ) : (
               <FlatList
@@ -216,14 +227,17 @@ export default function PlacesScreen() {
                   return (
                     <Pressable
                       onPress={() => router.push(`/places/${item.id}`)}
-                      style={styles.listItem}
+                      style={[
+                        styles.listItem,
+                        { backgroundColor: surfaces.cardItem },
+                      ]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Открыть ${item.name}`}
+                      accessibilityLabel={t('common.openItem', { name: item.name })}
                     >
                       <MaterialCommunityIcons
                         name="map-marker"
                         size={24}
-                        color={UI.primary}
+                        color={primary}
                         style={styles.placeIcon}
                       />
                       <View style={styles.listText}>
@@ -238,7 +252,7 @@ export default function PlacesScreen() {
                           <MaterialCommunityIcons
                             name="chevron-right"
                             size={24}
-                            color={UI.primary}
+                            color={primary}
                           />
                         </View>
                         {hasMarks ? (
@@ -257,7 +271,7 @@ export default function PlacesScreen() {
                                   ]}
                                   numberOfLines={1}
                                 >
-                                  Посетить позже
+                                  {t('places.visitLater')}
                                 </Text>
                               </View>
                             ) : null}
@@ -275,7 +289,7 @@ export default function PlacesScreen() {
                                   ]}
                                   numberOfLines={1}
                                 >
-                                  Понравилось
+                                  {t('places.liked')}
                                 </Text>
                               </View>
                             ) : null}
@@ -294,7 +308,7 @@ export default function PlacesScreen() {
                 onPress={() => router.push('/places/new')}
                 style={styles.addButton}
               >
-                Добавить
+                {t('common.add')}
               </PrimaryButton>
             </View>
           </View>
@@ -322,13 +336,11 @@ const styles = StyleSheet.create({
   },
   panel: {
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 12,
   },
   search: {
     height: UI.buttonHeight,
-    backgroundColor: UI.primary,
     borderRadius: UI.buttonBorderRadius,
     elevation: 0,
     marginBottom: UI.buttonGap,
@@ -352,7 +364,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: UI.buttonHeight,
     borderRadius: UI.buttonBorderRadius,
-    backgroundColor: UI.filterIdle,
     marginBottom: UI.buttonGap,
     gap: 8,
     paddingHorizontal: 12,
@@ -361,7 +372,6 @@ const styles = StyleSheet.create({
     // Без абсолютного позиционирования.
   },
   resetLabel: {
-    color: UI.primary,
     fontSize: UI.filterLabelFontSize,
     fontWeight: '500',
   },
@@ -374,7 +384,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.7)',
     paddingVertical: 10,
     paddingHorizontal: 8,
   },

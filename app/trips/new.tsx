@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { TripForm, type TripFormValues } from '@/src/components/TripForm';
 import { addPlaceToTrip, createTrip } from '@/src/db';
@@ -8,6 +9,7 @@ import { toStorageDate } from '@/src/utils/dates';
 
 export default function NewTripScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (
@@ -35,10 +37,10 @@ export default function NewTripScreen() {
   };
 
   return (
-    <ScreenScaffold title="Новая поездка" contentStyle={styles.content}>
+    <ScreenScaffold title={t('trips.newTitle')} contentStyle={styles.content}>
       <TripForm
         mode="create"
-        submitLabel="Сохранить"
+        submitLabel={t('common.save')}
         saving={saving}
         onSubmit={handleSubmit}
       />

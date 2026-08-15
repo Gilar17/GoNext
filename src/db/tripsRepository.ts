@@ -1,3 +1,4 @@
+import i18n from '@/src/i18n';
 import type { Trip, TripInput, TripPlace } from '@/src/types';
 import { getDatabase } from './client';
 import { fromBool, toBool, type TripPlaceRow, type TripRow } from './mappers';
@@ -42,7 +43,7 @@ export async function createTrip(input: TripInput): Promise<Trip> {
 
   const trip = await getTripById(Number(result.lastInsertRowId));
   if (!trip) {
-    throw new Error('Не удалось создать поездку');
+    throw new Error(i18n.t('errors.createTripFailed'));
   }
   return trip;
 }

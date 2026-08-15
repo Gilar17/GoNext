@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { TripForm, type TripFormValues } from '@/src/components/TripForm';
 import { getTripById, updateTrip } from '@/src/db';
@@ -10,6 +11,7 @@ import type { Trip } from '@/src/types';
 
 export default function EditTripScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const tripId = Number(id);
 
@@ -20,7 +22,7 @@ export default function EditTripScreen() {
 
   const loadTrip = useCallback(async () => {
     if (!Number.isFinite(tripId)) {
-      setError('Некорректный идентификатор поездки');
+      setError(t('errors.invalidTripId'));
       setLoading(false);
       return;
     }
@@ -29,13 +31,13 @@ export default function EditTripScreen() {
     try {
       const data = await getTripById(tripId);
       setTrip(data);
-      setError(data ? null : 'Поездка не найдена');
+      setError(data ? null : t('errors.tripNotFound'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить поездку');
+      setError(e instanceof Error ? e.message : t('errors.loadTripFailed'));
     } finally {
       setLoading(false);
     }
-  }, [tripId]);
+  }, [tripId, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,9 +62,9 @@ export default function EditTripScreen() {
   };
 
   return (
-    <ScreenScaffold title="Редактирование" contentStyle={styles.content}>
+    <ScreenScaffold title={t('trips.editTitle')} contentStyle={styles.content}>
       {loading ? (
-        <Text>Загрузка…</Text>
+        <Text>{t('common.loading')}</Text>
       ) : trip ? (
         <TripForm
           mode="edit"
@@ -74,12 +76,12 @@ export default function EditTripScreen() {
             endDate: toUiDate(trip.endDate),
             current: trip.current,
           }}
-          submitLabel="Сохранить изменения"
+          submitLabel={t('common.saveChanges')}
           saving={saving}
           onSubmit={handleSubmit}
         />
       ) : (
-        <Text>{error ?? 'Поездка не найдена'}</Text>
+        <Text>{error ?? t('errors.tripNotFound')}</Text>
       )}
     </ScreenScaffold>
   );

@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from 'react-native-paper';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import {
   primaryButtonContentStyle,
   primaryButtonLabelStyle,
@@ -31,11 +32,12 @@ export function PrimaryButton({
   textColor,
   ...rest
 }: PrimaryButtonProps) {
+  const { primary, surfaces } = useAppTheme();
   const resolvedButtonColor =
     buttonColor ??
-    (active === false ? UI.filterIdle : UI.primary);
+    (active === false ? surfaces.filterIdle : primary);
   const resolvedTextColor =
-    textColor ?? (active === false ? UI.primary : UI.onPrimary);
+    textColor ?? (active === false ? primary : UI.onPrimary);
 
   return (
     <Button

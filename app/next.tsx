@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Button, Snackbar, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenScaffold } from '@/src/components/ScreenScaffold';
@@ -16,9 +17,11 @@ import {
   tripFilledIconLabelStyle,
   tripOutlineButtonStyle,
   tripOutlineIconLabelStyle,
+  useAccentStyles,
 } from '@/src/theme/tripButtons';
 import { UI } from '@/src/theme/ui';
 import { isTripEnded } from '@/src/utils/dates';
+import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import type { Place, Trip, TripPlace } from '@/src/types';
 
 type EmptyKind = 'no-current' | 'ended' | 'no-places' | 'all-visited';
@@ -41,7 +44,10 @@ function tripIcon(name: keyof typeof MaterialCommunityIcons.glyphMap) {
 
 export default function NextPlaceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { surfaces } = useAppTheme();
+  const accent = useAccentStyles();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,12 +105,12 @@ export default function NextPlaceScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Не удалось загрузить следующее место',
+          : t('errors.loadNextFailed'),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -119,7 +125,7 @@ export default function NextPlaceScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Для этого места не указаны корректные координаты',
+          : t('errors.invalidCoordinates'),
       );
     }
   };
@@ -131,7 +137,7 @@ export default function NextPlaceScreen() {
       setError(
         e instanceof Error
           ? e.message
-          : 'Для этого места не указаны корректные координаты',
+          : t('errors.invalidCoordinates'),
       );
     }
   };
@@ -143,30 +149,30 @@ export default function NextPlaceScreen() {
     : 0;
   const placeName =
     nextPlace?.place?.name ??
-    (nextPlace ? `Место #${nextPlace.tripPlace.placeId}` : '');
+    (nextPlace ? t('common.placeFallback', { id: nextPlace.tripPlace.placeId }) : '');
   const description = nextPlace?.place?.description.trim() ?? '';
   const dd = nextPlace?.place?.dd ?? null;
 
   const emptyMessage =
     emptyKind === 'no-current'
-      ? 'Нет текущей поездки'
+      ? t('next.noCurrent')
       : emptyKind === 'ended'
-        ? 'Активной текущей поездки сейчас нет'
+        ? t('next.ended')
         : emptyKind === 'no-places'
-          ? 'В текущую поездку пока не добавлены места'
+          ? t('next.noPlaces')
           : emptyKind === 'all-visited'
-            ? 'Все места уже посещены'
+            ? t('next.allVisited')
             : null;
 
   const emptyAction =
     emptyKind === 'no-current' || emptyKind === 'ended'
       ? {
-          label: 'К поездкам',
+          label: t('next.toTrips'),
           onPress: () => router.push('/trips'),
         }
       : emptyKind === 'no-places' || emptyKind === 'all-visited'
         ? {
-            label: 'Открыть поездку',
+            label: t('next.openTrip'),
             onPress: () => {
               if (emptyTripId != null) {
                 router.push(`/trips/${emptyTripId}`);
@@ -178,7 +184,7 @@ export default function NextPlaceScreen() {
   return (
     <>
       <ScreenScaffold
-        title="Следующее место"
+        title={t('next.title')}
         titleIcon="map-marker-right"
         contentStyle={[
           styles.content,
@@ -186,22 +192,22 @@ export default function NextPlaceScreen() {
         ]}
       >
         {loading ? (
-          <Text>Загрузка…</Text>
+          <Text>{t('common.loading')}</Text>
         ) : nextPlace ? (
           <ScrollView
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator
           >
-            <View style={styles.panel}>
+            <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
               <Text variant="titleSmall" style={styles.firstLabel}>
-                Поездка
+                {t('next.trip')}
               </Text>
               <Text variant="bodyLarge">{nextPlace.trip.title}</Text>
 
               <Text variant="titleSmall" style={styles.label}>
-                В маршруте
+                {t('next.inRoute')}
               </Text>
-              <Text variant="bodyLarge">Место {orderNumber}</Text>
+              <Text variant="bodyLarge">{t('next.placeNumber', { n: orderNumber })}</Text>
 
               <Text variant="headlineSmall" style={styles.placeName}>
                 {placeName}
@@ -210,7 +216,7 @@ export default function NextPlaceScreen() {
               {description ? (
                 <>
                   <Text variant="titleSmall" style={styles.label}>
-                    Описание
+                    {t('next.description')}
                   </Text>
                   <Text variant="bodyLarge">{description}</Text>
                 </>
@@ -219,7 +225,7 @@ export default function NextPlaceScreen() {
               {dd ? (
                 <>
                   <Text variant="titleSmall" style={styles.label}>
-                    Координаты (DD)
+                    {t('next.coordinates')}
                   </Text>
                   <Text variant="bodyLarge">{dd}</Text>
                 </>
@@ -230,34 +236,34 @@ export default function NextPlaceScreen() {
                   mode="outlined"
                   icon={tripIcon('map-marker')}
                   onPress={() => void handleOpenMap()}
-                  textColor={UI.primary}
+                  textColor={accent.primary}
                   theme={tripButtonTheme}
-                  style={tripOutlineButtonStyle}
+                  style={[tripOutlineButtonStyle, accent.outline]}
                   contentStyle={tripButtonContentStyle}
-                  labelStyle={tripOutlineIconLabelStyle}
+                  labelStyle={[tripOutlineIconLabelStyle, accent.label]}
                 >
-                  Открыть на карте
+                  {t('next.openOnMap')}
                 </Button>
                 <Button
                   mode="contained"
                   icon={tripIcon('navigation-variant')}
                   onPress={() => void handleOpenNavigator()}
-                  buttonColor={UI.primary}
+                  buttonColor={accent.primary}
                   textColor={UI.onPrimary}
                   theme={tripButtonTheme}
-                  style={tripFilledButtonStyle}
+                  style={[tripFilledButtonStyle, accent.filled]}
                   contentStyle={tripButtonContentStyle}
                   labelStyle={tripFilledIconLabelStyle}
                 >
-                  Открыть в навигаторе
+                  {t('next.openInNavigator')}
                 </Button>
               </View>
             </View>
           </ScrollView>
         ) : (
-          <View style={styles.panel}>
+          <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
             <Text style={styles.message}>
-              {emptyMessage ?? error ?? 'Не удалось загрузить следующее место'}
+              {emptyMessage ?? error ?? t('errors.loadNextFailed')}
             </Text>
             {emptyAction ? (
               <PrimaryButton onPress={emptyAction.onPress}>
@@ -284,7 +290,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   panel: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 12,
     padding: 16,
     paddingBottom: 20,
