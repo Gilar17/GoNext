@@ -29,6 +29,7 @@ import {
 } from '@/src/theme/ui';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { getDateLocale } from '@/src/i18n';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import type { Place } from '@/src/types';
 
 const MARK_VISIT_LATER = '#3B8F5C';
@@ -39,6 +40,7 @@ const HEADER_ACTION_SIZE = 40;
 export default function PlaceDetailsScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const loc = useLocalizedUserText();
   const theme = useTheme();
   const { surfaces, accent } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -157,14 +159,16 @@ export default function PlaceDetailsScreen() {
           >
             <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
               <Text variant="headlineSmall" style={styles.placeName}>
-                {place.name}
+                {loc(place.name)}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
                 {t('places.description')}
               </Text>
               <Text variant="bodyLarge">
-                {place.description.trim() || t('common.noDescription')}
+                {place.description.trim()
+                  ? loc(place.description)
+                  : t('common.noDescription')}
               </Text>
 
               <Text variant="titleSmall" style={styles.label}>
@@ -248,7 +252,7 @@ export default function PlaceDetailsScreen() {
           <Dialog.Title>{t('places.deleteConfirmTitle')}</Dialog.Title>
           <Dialog.Content>
             <Text>
-              {t('places.deleteConfirmBody', { name: place?.name ?? '' })}
+              {t('places.deleteConfirmBody', { name: loc(place?.name ?? '') })}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>

@@ -31,6 +31,7 @@ import {
 } from '@/src/theme/tripButtons';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 
 type TripPlaceNotesSectionProps = {
   tripPlaceId: number;
@@ -58,6 +59,7 @@ export function TripPlaceNotesSection({
   onSave,
 }: TripPlaceNotesSectionProps) {
   const { t, i18n } = useTranslation();
+  const loc = useLocalizedUserText();
   const theme = useTheme();
   const { surfaces, primary } = useAppTheme();
   const accent = useAccentStyles();
@@ -128,7 +130,9 @@ export function TripPlaceNotesSection({
       {hasNotes ? (
         <>
           <View style={[styles.noteCard, { backgroundColor: surfaces.cardItem }]}>
-            <Text style={[styles.noteText, { color: surfaces.noteText }]}>{notes}</Text>
+            <Text style={[styles.noteText, { color: surfaces.noteText }]}>
+              {loc(notes)}
+            </Text>
           </View>
           <View style={styles.actionsRow}>
             <Button

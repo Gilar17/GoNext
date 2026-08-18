@@ -17,6 +17,7 @@ import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { listPlaces } from '@/src/db';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import type { Place } from '@/src/types';
 
 export type TripFormValues = {
@@ -59,6 +60,7 @@ export function TripForm({
   onSubmit,
 }: TripFormProps) {
   const { t, i18n } = useTranslation();
+  const loc = useLocalizedUserText();
   const isCreate = mode === 'create';
   const { surfaces, accent } = useAppTheme();
   const [values, setValues] = useState<TripFormValues>({
@@ -272,7 +274,7 @@ export function TripForm({
                         />
                         <View style={styles.placeText}>
                           <Text variant="titleSmall" numberOfLines={2}>
-                            {place.name}
+                            {loc(place.name)}
                           </Text>
                         </View>
                         {selected ? (

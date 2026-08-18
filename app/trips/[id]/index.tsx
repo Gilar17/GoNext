@@ -56,6 +56,7 @@ import {
   formatDateLabel,
   formatDateTimeLabel,
 } from '@/src/utils/dates';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import type { Place, Trip, TripPlace } from '@/src/types';
 
 const HEADER_DELETE = '#BDBDBD';
@@ -182,6 +183,7 @@ function isTripEnded(endDate: string | null): boolean {
 export default function TripDetailsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const loc = useLocalizedUserText();
   const theme = useTheme();
   const { surfaces } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -526,7 +528,7 @@ export default function TripDetailsScreen() {
           >
             <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
               <Text variant="headlineSmall" style={styles.tripTitle}>
-                {trip.title}
+                {loc(trip.title)}
               </Text>
 
               {trip.current ? (
@@ -552,7 +554,9 @@ export default function TripDetailsScreen() {
                 {t('trips.description')}
               </Text>
               <Text variant="bodyLarge">
-                {trip.description.trim() || t('common.noDescription')}
+                {trip.description.trim()
+                  ? loc(trip.description)
+                  : t('common.noDescription')}
               </Text>
 
               <Text variant="titleSmall" style={styles.labelMuted}>
@@ -630,7 +634,9 @@ export default function TripDetailsScreen() {
                         <Text style={[styles.orderBadge, { color: accent.fg }]}>{orderNumber}</Text>
                         <View style={styles.tripPlaceTitleWrap}>
                           <Text variant="titleMedium" numberOfLines={2}>
-                            {place?.name ?? t('common.placeFallback', { id: tripPlace.placeId })}
+                            {place?.name
+                              ? loc(place.name)
+                              : t('common.placeFallback', { id: tripPlace.placeId })}
                           </Text>
                         </View>
                         <View style={styles.reorderColumn}>
@@ -793,7 +799,7 @@ export default function TripDetailsScreen() {
           <Dialog.Title>{t('trips.deleteTripTitle')}</Dialog.Title>
           <Dialog.Content>
             <Text>
-              {t('trips.deleteTripBody', { name: trip?.title ?? '' })}
+              {t('trips.deleteTripBody', { name: loc(trip?.title ?? '') })}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
@@ -882,7 +888,7 @@ export default function TripDetailsScreen() {
                   />
                   <View style={styles.addPlaceText}>
                     <Text variant="titleSmall" numberOfLines={2}>
-                      {place.name}
+                      {loc(place.name)}
                     </Text>
                     {place.dd ? (
                       <Text variant="bodySmall" style={styles.meta}>

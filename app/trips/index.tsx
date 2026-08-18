@@ -17,6 +17,7 @@ import { listTrips } from '@/src/db';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
 import { formatDateLabel } from '@/src/utils/dates';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import type { Trip } from '@/src/types';
 import type { TFunction } from 'i18next';
 
@@ -38,6 +39,7 @@ function tripDatesLabel(trip: Trip, t: TFunction): string | null {
 export default function TripsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const loc = useLocalizedUserText();
   const insets = useSafeAreaInsets();
   const { surfaces, accent } = useAppTheme();
   const { height: windowHeight } = useWindowDimensions();
@@ -113,7 +115,7 @@ export default function TripsScreen() {
                       { backgroundColor: surfaces.cardItem },
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel={t('common.openItem', { name: item.title })}
+                    accessibilityLabel={t('common.openItem', { name: loc(item.title) })}
                   >
                     <MaterialCommunityIcons
                       name="bag-suitcase"
@@ -128,7 +130,7 @@ export default function TripsScreen() {
                           numberOfLines={1}
                           style={styles.tripTitle}
                         >
-                          {item.title}
+                          {loc(item.title)}
                         </Text>
                         <MaterialCommunityIcons
                           name="chevron-right"

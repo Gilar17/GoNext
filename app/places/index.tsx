@@ -18,6 +18,7 @@ import { ScreenScaffold } from '@/src/components/ScreenScaffold';
 import { listPlaces } from '@/src/db';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import { UI } from '@/src/theme/ui';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import { matchesPlaceName } from '@/src/utils/search';
 import type { Place } from '@/src/types';
 
@@ -31,6 +32,7 @@ const CONTENT_EDGE_GAP = 12;
 export default function PlacesScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const loc = useLocalizedUserText();
   const insets = useSafeAreaInsets();
   const { surfaces, primary, accent } = useAppTheme();
 
@@ -237,7 +239,7 @@ export default function PlacesScreen() {
                         { backgroundColor: surfaces.cardItem },
                       ]}
                       accessibilityRole="button"
-                      accessibilityLabel={t('common.openItem', { name: item.name })}
+                      accessibilityLabel={t('common.openItem', { name: loc(item.name) })}
                     >
                       <MaterialCommunityIcons
                         name="map-marker"
@@ -252,7 +254,7 @@ export default function PlacesScreen() {
                             numberOfLines={1}
                             style={styles.placeName}
                           >
-                            {item.name}
+                            {loc(item.name)}
                           </Text>
                           <MaterialCommunityIcons
                             name="chevron-right"

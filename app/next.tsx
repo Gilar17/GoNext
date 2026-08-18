@@ -21,6 +21,7 @@ import {
 } from '@/src/theme/tripButtons';
 import { UI } from '@/src/theme/ui';
 import { isTripEnded } from '@/src/utils/dates';
+import { useLocalizedUserText } from '@/src/utils/localizeUserText';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 import type { Place, Trip, TripPlace } from '@/src/types';
 
@@ -45,6 +46,7 @@ function tripIcon(name: keyof typeof MaterialCommunityIcons.glyphMap) {
 export default function NextPlaceScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const loc = useLocalizedUserText();
   const insets = useSafeAreaInsets();
   const { surfaces } = useAppTheme();
   const accent = useAccentStyles();
@@ -147,10 +149,12 @@ export default function NextPlaceScreen() {
         (item) => item.id === nextPlace.tripPlace.id,
       ) + 1
     : 0;
-  const placeName =
-    nextPlace?.place?.name ??
-    (nextPlace ? t('common.placeFallback', { id: nextPlace.tripPlace.placeId }) : '');
-  const description = nextPlace?.place?.description.trim() ?? '';
+  const placeName = nextPlace?.place?.name
+    ? loc(nextPlace.place.name)
+    : nextPlace
+      ? t('common.placeFallback', { id: nextPlace.tripPlace.placeId })
+      : '';
+  const description = loc(nextPlace?.place?.description.trim() ?? '');
   const dd = nextPlace?.place?.dd ?? null;
 
   const emptyMessage =
@@ -202,7 +206,7 @@ export default function NextPlaceScreen() {
               <Text variant="titleSmall" style={styles.firstLabel}>
                 {t('next.trip')}
               </Text>
-              <Text variant="bodyLarge">{nextPlace.trip.title}</Text>
+              <Text variant="bodyLarge">{loc(nextPlace.trip.title)}</Text>
 
               <Text variant="titleSmall" style={styles.label}>
                 {t('next.inRoute')}
