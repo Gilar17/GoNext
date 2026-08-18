@@ -44,6 +44,7 @@ export default function SettingsScreen() {
     setColorScheme,
     primary,
     setPrimary,
+    accent: accentColor,
     showBackgroundImage,
     setShowBackgroundImage,
     surfaces,
@@ -79,16 +80,22 @@ export default function SettingsScreen() {
           showsVerticalScrollIndicator
         >
           <View style={[styles.panel, { backgroundColor: surfaces.card }]}>
-            <Text variant="titleSmall" style={styles.section}>
+            <Text
+              variant="titleSmall"
+              style={[styles.section, { color: surfaces.mutedText }]}
+            >
               {t('settings.about')}
             </Text>
-            <Text style={[styles.brand, { color: primary }]}>{t('app.name')}</Text>
+            <Text style={[styles.brand, { color: accentColor }]}>{t('app.name')}</Text>
             <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
             <Text style={styles.body}>
               {t('app.aboutBody')}
             </Text>
 
-            <Text variant="titleSmall" style={styles.sectionSpaced}>
+            <Text
+              variant="titleSmall"
+              style={[styles.sectionSpaced, { color: surfaces.mutedText }]}
+            >
               {t('settings.language')}
             </Text>
             <View style={styles.themeRow}>
@@ -104,7 +111,10 @@ export default function SettingsScreen() {
               />
             </View>
 
-            <Text variant="titleSmall" style={styles.sectionSpaced}>
+            <Text
+              variant="titleSmall"
+              style={[styles.sectionSpaced, { color: surfaces.mutedText }]}
+            >
               {t('settings.theme')}
             </Text>
             <View style={styles.themeRow}>
@@ -166,10 +176,14 @@ export default function SettingsScreen() {
               <Switch
                 value={showBackgroundImage}
                 onValueChange={setShowBackgroundImage}
+                color={accentColor}
               />
             </View>
 
-            <Text variant="titleSmall" style={styles.sectionSpaced}>
+            <Text
+              variant="titleSmall"
+              style={[styles.sectionSpaced, { color: surfaces.mutedText }]}
+            >
               {t('settings.data')}
             </Text>
             <Text style={[styles.info, { color: surfaces.mutedText }]}>
@@ -179,7 +193,10 @@ export default function SettingsScreen() {
               {t('settings.dataBackup')}
             </Text>
 
-            <Text variant="titleSmall" style={styles.sectionSpaced}>
+            <Text
+              variant="titleSmall"
+              style={[styles.sectionSpaced, { color: surfaces.mutedText }]}
+            >
               {t('settings.permissions')}
             </Text>
             <Text style={[styles.info, { color: surfaces.mutedText }]}>
@@ -190,7 +207,7 @@ export default function SettingsScreen() {
               mode="outlined"
               icon={settingsIcon('cellphone-cog')}
               onPress={() => void handleOpenAppSettings()}
-              textColor={accent.primary}
+              textColor={accent.fg}
               theme={tripButtonTheme}
               style={[
                 tripOutlineButtonStyle,
@@ -233,11 +250,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   section: {
-    opacity: 0.7,
     marginBottom: 12,
   },
   sectionSpaced: {
-    opacity: 0.7,
     marginTop: 20,
     marginBottom: 8,
   },

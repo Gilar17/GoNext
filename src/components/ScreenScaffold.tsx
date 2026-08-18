@@ -9,6 +9,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Appbar, Text, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { UI } from '@/src/theme/ui';
 
 type ScreenScaffoldProps = {
   title: string;
@@ -33,31 +34,24 @@ export function ScreenScaffold({
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useTheme();
-  const titleIconColor = theme.dark ? theme.colors.onSurface : '#fff';
-  const inlineTitleColor = theme.dark ? theme.colors.onSurface : '#000000';
+  const iconColor = theme.colors.onSurface;
+  const titleColor = theme.colors.onSurface;
 
   return (
     <View style={styles.container}>
-      <Appbar.Header style={styles.header}>
+      <Appbar.Header style={styles.header} dark={theme.dark}>
         {showBack ? (
           <Appbar.BackAction
             onPress={() => router.back()}
             accessibilityLabel={t('common.back')}
-          />
-        ) : null}
-        {titleIcon ? (
-          <MaterialCommunityIcons
-            name={titleIcon}
-            size={22}
-            color={titleIconColor}
-            style={styles.titleIcon}
+            color={iconColor}
           />
         ) : null}
         {titleTrailing ? (
           <>
             <Text
               variant="titleLarge"
-              style={[styles.inlineTitle, { color: inlineTitleColor }]}
+              style={[styles.inlineTitle, { color: titleColor }]}
               numberOfLines={1}
             >
               {title}
@@ -70,7 +64,26 @@ export function ScreenScaffold({
           </>
         ) : (
           <>
-            <Appbar.Content title={title} titleStyle={styles.title} />
+            <Appbar.Content
+              title={title}
+              titleStyle={[styles.title, { color: titleColor }]}
+              color={titleColor}
+              style={styles.titleContent}
+            />
+            {titleIcon ? (
+              <View
+                style={styles.headerTrailingIcon}
+                pointerEvents="none"
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                <MaterialCommunityIcons
+                  name={titleIcon}
+                  size={UI.headerIconSize}
+                  color={iconColor}
+                />
+              </View>
+            ) : null}
             {actions}
           </>
         )}
@@ -113,16 +126,22 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: 'transparent',
   },
-  titleIcon: {
-    marginLeft: 4,
+  titleContent: {
+    marginLeft: 0,
     marginRight: 0,
-    alignSelf: 'center',
   },
   title: {
     marginLeft: 0,
   },
+  headerTrailingIcon: {
+    marginLeft: UI.headerTitleIconGap,
+    marginRight: 8,
+    width: UI.headerIconSize,
+    height: UI.headerIconSize,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inlineTitle: {
-    color: '#000000',
     marginLeft: 0,
     marginRight: 4,
     alignSelf: 'center',

@@ -60,7 +60,7 @@ export function TripForm({
 }: TripFormProps) {
   const { t, i18n } = useTranslation();
   const isCreate = mode === 'create';
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, accent } = useAppTheme();
   const [values, setValues] = useState<TripFormValues>({
     ...emptyValues,
     ...initialValues,
@@ -223,6 +223,7 @@ export function TripForm({
           <Switch
             value={values.current}
             onValueChange={(value) => update('current', value)}
+            color={accent}
           />
         </View>
 
@@ -267,7 +268,7 @@ export function TripForm({
                               : 'checkbox-blank-outline'
                           }
                           size={22}
-                          color={primary}
+                          color={accent}
                         />
                         <View style={styles.placeText}>
                           <Text variant="titleSmall" numberOfLines={2}>
@@ -275,7 +276,7 @@ export function TripForm({
                           </Text>
                         </View>
                         {selected ? (
-                          <Text style={[styles.orderBadge, { color: primary }]}>{orderIndex + 1}</Text>
+                          <Text style={[styles.orderBadge, { color: accent }]}>{orderIndex + 1}</Text>
                         ) : null}
                       </Pressable>
                       {selected ? (
@@ -289,7 +290,7 @@ export function TripForm({
                             <MaterialCommunityIcons
                               name="chevron-up"
                               size={22}
-                              color={primary}
+                              color={accent}
                             />
                           </Pressable>
                           <Pressable
@@ -301,7 +302,7 @@ export function TripForm({
                             <MaterialCommunityIcons
                               name="chevron-down"
                               size={22}
-                              color={primary}
+                              color={accent}
                             />
                           </Pressable>
                         </View>

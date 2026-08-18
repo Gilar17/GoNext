@@ -32,7 +32,7 @@ export default function PlacesScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, primary, accent } = useAppTheme();
 
   const [places, setPlaces] = useState<Place[]>([]);
   const [query, setQuery] = useState('');
@@ -195,10 +195,15 @@ export default function PlacesScreen() {
                   <MaterialCommunityIcons
                     name="close"
                     size={18}
-                    color={primary}
+                    color={surfaces.filterIdleText}
                     style={styles.resetIcon}
                   />
-                  <Text style={[styles.resetLabel, { color: primary }]}>
+                  <Text
+                    style={[
+                      styles.resetLabel,
+                      { color: surfaces.filterIdleText },
+                    ]}
+                  >
                     {t('places.resetFilters')}
                   </Text>
                 </Pressable>
@@ -237,7 +242,7 @@ export default function PlacesScreen() {
                       <MaterialCommunityIcons
                         name="map-marker"
                         size={24}
-                        color={primary}
+                        color={accent}
                         style={styles.placeIcon}
                       />
                       <View style={styles.listText}>
@@ -252,7 +257,7 @@ export default function PlacesScreen() {
                           <MaterialCommunityIcons
                             name="chevron-right"
                             size={24}
-                            color={primary}
+                            color={accent}
                           />
                         </View>
                         {hasMarks ? (

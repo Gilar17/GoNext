@@ -6,12 +6,13 @@ import { UI } from '@/src/theme/ui';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
 
 export function useAccentStyles() {
-  const { primary } = useAppTheme();
+  const { primary, accent } = useAppTheme();
   return {
-    primary,
-    outline: { borderColor: primary },
+    fill: primary,
+    fg: accent,
+    outline: { borderColor: accent },
     filled: { borderColor: primary, backgroundColor: primary },
-    label: { color: primary },
+    label: { color: accent },
   };
 }
 

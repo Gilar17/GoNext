@@ -3,22 +3,24 @@ import { Appbar, Button, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/src/theme/AppThemeProvider';
+import { UI } from '@/src/theme/ui';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, primary, accent } = useAppTheme();
+  const appName = t('app.name');
 
   return (
     <View style={styles.container}>
       <Appbar.Header>
-        <Appbar.Content title={t('app.name')} />
+        <Appbar.Content title={appName} />
       </Appbar.Header>
 
       <View style={styles.content}>
         <View style={styles.composition}>
           <View style={styles.hero}>
-            <Text style={[styles.brand, { color: primary }]}>{t('app.name')}</Text>
+            <Text style={[styles.brand, { color: accent }]}>{appName}</Text>
             <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
             <Text style={[styles.tagline, { color: surfaces.mutedText }]}>
               {t('app.tagline')}
@@ -29,6 +31,8 @@ export default function HomeScreen() {
             <Button
               mode="contained"
               onPress={() => router.push('/places')}
+              buttonColor={primary}
+              textColor={UI.onPrimary}
               style={styles.button}
             >
               {t('home.places')}
@@ -36,6 +40,8 @@ export default function HomeScreen() {
             <Button
               mode="contained"
               onPress={() => router.push('/trips')}
+              buttonColor={primary}
+              textColor={UI.onPrimary}
               style={styles.button}
             >
               {t('home.trips')}
@@ -43,6 +49,8 @@ export default function HomeScreen() {
             <Button
               mode="contained"
               onPress={() => router.push('/next')}
+              buttonColor={primary}
+              textColor={UI.onPrimary}
               style={styles.button}
             >
               {t('home.nextPlace')}
@@ -50,6 +58,8 @@ export default function HomeScreen() {
             <Button
               mode="contained"
               onPress={() => router.push('/settings')}
+              buttonColor={primary}
+              textColor={UI.onPrimary}
               style={styles.button}
             >
               {t('home.settings')}

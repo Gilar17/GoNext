@@ -40,7 +40,7 @@ export default function PlaceDetailsScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const theme = useTheme();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, accent } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -129,7 +129,7 @@ export default function PlaceDetailsScreen() {
                 <MaterialCommunityIcons
                   name="pencil"
                   size={22}
-                  color={primary}
+                  color={accent}
                 />
               </Pressable>
               <Pressable
@@ -183,10 +183,10 @@ export default function PlaceDetailsScreen() {
                 mode="outlined"
                 icon="map-marker"
                 onPress={handleOpenMap}
-                textColor={primary}
-                style={[styles.mapButton, { borderColor: primary }]}
+                textColor={accent}
+                style={[styles.mapButton, { borderColor: accent }]}
                 contentStyle={primaryButtonContentStyle}
-                labelStyle={[styles.mapButtonLabel, { color: primary }]}
+                labelStyle={[styles.mapButtonLabel, { color: accent }]}
               >
                 {t('places.openOnMap')}
               </Button>
@@ -253,7 +253,7 @@ export default function PlaceDetailsScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent}
               onPress={() => setDeleteVisible(false)}
             >
               {t('common.cancel')}

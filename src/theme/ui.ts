@@ -18,6 +18,9 @@ export const UI = {
   buttonGap: 12,
   filterGap: 8,
   iconTextGap: 12,
+  /** Минимальный зазор между заголовком Appbar и правой иконкой. */
+  headerTitleIconGap: 24,
+  headerIconSize: 22,
 } as const;
 
 export const primaryButtonStyle = {

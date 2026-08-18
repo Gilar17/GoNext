@@ -93,7 +93,7 @@ function RouteActionButton({
     ? UI.mutedText
     : filled
       ? UI.onPrimary
-      : accent.primary;
+      : accent.fg;
 
   return (
     <Button
@@ -101,7 +101,7 @@ function RouteActionButton({
       icon={icon ? tripIcon(icon) : undefined}
       disabled={disabled}
       onPress={onPress}
-      buttonColor={filled ? accent.primary : undefined}
+      buttonColor={filled ? accent.fill : undefined}
       textColor={textColor}
       theme={tripButtonTheme}
       style={[
@@ -183,7 +183,7 @@ export default function TripDetailsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useTheme();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const accent = useAccentStyles();
@@ -497,7 +497,7 @@ export default function TripDetailsScreen() {
                 <MaterialCommunityIcons
                   name="pencil"
                   size={22}
-                  color={primary}
+                  color={accent.fg}
                 />
               </Pressable>
               <Pressable
@@ -530,7 +530,7 @@ export default function TripDetailsScreen() {
               </Text>
 
               {trip.current ? (
-                <Text style={[styles.currentBadge, { color: primary }]}>
+                <Text style={[styles.currentBadge, { color: accent.fg }]}>
                   {t('trips.currentTrip')}
                 </Text>
               ) : tripEnded ? null : (
@@ -538,7 +538,7 @@ export default function TripDetailsScreen() {
                   mode="outlined"
                   icon={tripIcon('check-circle-outline')}
                   onPress={handleSetCurrent}
-                  textColor={primary}
+                  textColor={accent.fg}
                   theme={tripButtonTheme}
                   style={[styles.outlineButton, accent.outline]}
                   contentStyle={tripButtonContentStyle}
@@ -627,7 +627,7 @@ export default function TripDetailsScreen() {
                       ]}
                     >
                       <View style={styles.tripPlaceHeader}>
-                        <Text style={[styles.orderBadge, { color: primary }]}>{orderNumber}</Text>
+                        <Text style={[styles.orderBadge, { color: accent.fg }]}>{orderNumber}</Text>
                         <View style={styles.tripPlaceTitleWrap}>
                           <Text variant="titleMedium" numberOfLines={2}>
                             {place?.name ?? t('common.placeFallback', { id: tripPlace.placeId })}
@@ -649,7 +649,7 @@ export default function TripDetailsScreen() {
                               color={
                                 moveLocked || isFirst
                                   ? UI.mutedText
-                                  : primary
+                                  : accent.fg
                               }
                             />
                           </Pressable>
@@ -666,7 +666,7 @@ export default function TripDetailsScreen() {
                               color={
                                 moveLocked || isLast
                                   ? UI.mutedText
-                                  : primary
+                                  : accent.fg
                               }
                             />
                           </Pressable>
@@ -678,7 +678,7 @@ export default function TripDetailsScreen() {
                           mode="outlined"
                           icon={tripIcon('map-marker')}
                           onPress={() => void handleOpenMap(place)}
-                          textColor={primary}
+                          textColor={accent.fg}
                           theme={tripButtonTheme}
                           style={[styles.mapButton, accent.outline]}
                           contentStyle={tripButtonContentStyle}
@@ -729,7 +729,7 @@ export default function TripDetailsScreen() {
                               mode="outlined"
                               icon={tripIcon('image-plus')}
                               onPress={() => void pickPhotos(tripPlace.id)}
-                              textColor={primary}
+                              textColor={accent.fg}
                               theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
@@ -745,7 +745,7 @@ export default function TripDetailsScreen() {
                               mode="outlined"
                               icon={tripIcon('camera')}
                               onPress={() => void takePhoto(tripPlace.id)}
-                              textColor={primary}
+                              textColor={accent.fg}
                               theme={tripButtonTheme}
                               style={[
                                 styles.outlineButton,
@@ -798,7 +798,7 @@ export default function TripDetailsScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent.fg}
               onPress={() => setDeleteVisible(false)}
             >
               {t('common.cancel')}
@@ -824,7 +824,7 @@ export default function TripDetailsScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent.fg}
               onPress={() => setCannotUnvisitVisible(false)}
             >
               {t('common.ok')}
@@ -842,7 +842,7 @@ export default function TripDetailsScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent.fg}
               onPress={() => setRemovePlaceId(null)}
             >
               {t('common.cancel')}
@@ -878,7 +878,7 @@ export default function TripDetailsScreen() {
                   <MaterialCommunityIcons
                     name="map-marker"
                     size={20}
-                    color={primary}
+                    color={accent.fg}
                   />
                   <View style={styles.addPlaceText}>
                     <Text variant="titleSmall" numberOfLines={2}>
@@ -896,7 +896,7 @@ export default function TripDetailsScreen() {
           </Dialog.ScrollArea>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent.fg}
               onPress={() => setAddPlaceVisible(false)}
             >
               {t('common.close')}

@@ -39,7 +39,7 @@ export default function TripsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, accent } = useAppTheme();
   const { height: windowHeight } = useWindowDimensions();
 
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -118,7 +118,7 @@ export default function TripsScreen() {
                     <MaterialCommunityIcons
                       name="bag-suitcase"
                       size={24}
-                      color={primary}
+                      color={accent}
                       style={styles.tripIcon}
                     />
                     <View style={styles.listText}>
@@ -133,11 +133,11 @@ export default function TripsScreen() {
                         <MaterialCommunityIcons
                           name="chevron-right"
                           size={24}
-                          color={primary}
+                          color={accent}
                         />
                       </View>
                       {item.current ? (
-                        <Text variant="bodySmall" style={[styles.currentBadge, { color: primary }]}>
+                        <Text variant="bodySmall" style={[styles.currentBadge, { color: accent }]}>
                           {t('trips.currentTrip')}
                         </Text>
                       ) : null}

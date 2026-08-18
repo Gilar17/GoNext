@@ -1,6 +1,10 @@
-import { mixHex } from '@/src/theme/primaryColors';
+import { getForegroundAccent, mixHex } from '@/src/theme/primaryColors';
 
 export type ColorSchemeName = 'light' | 'dark';
+
+/** Самый светлый тёмный surface, на котором рисуются акцентные иконки. */
+const DARK_FOREGROUND_SURFACE = '#3A3744';
+const LIGHT_FOREGROUND_SURFACE = '#FFFFFF';
 
 export type SurfaceColors = {
   appBackground: string;
@@ -9,14 +13,26 @@ export type SurfaceColors = {
   mutedText: string;
   bodyText: string;
   filterIdle: string;
+  filterIdleText: string;
   photoPlaceholder: string;
   sheet: string;
   noteText: string;
 };
 
+export function getAccentColor(
+  scheme: ColorSchemeName,
+  primary: string,
+): string {
+  return getForegroundAccent(
+    primary,
+    scheme === 'dark' ? DARK_FOREGROUND_SURFACE : LIGHT_FOREGROUND_SURFACE,
+  );
+}
+
 export function getSurfaceColors(
   scheme: ColorSchemeName,
   primary = '#6750A4',
+  accent = primary,
 ): SurfaceColors {
   if (scheme === 'dark') {
     return {
@@ -25,7 +41,8 @@ export function getSurfaceColors(
       cardItem: 'rgba(58, 55, 68, 0.94)',
       mutedText: '#B0AAB8',
       bodyText: '#E6E1E5',
-      filterIdle: mixHex(primary, '#1C1B1F', 0.58),
+      filterIdle: mixHex('#3A3842', primary, 0.25),
+      filterIdleText: accent,
       photoPlaceholder: '#3A3842',
       sheet: '#2B2930',
       noteText: '#E6E1E5',
@@ -39,8 +56,10 @@ export function getSurfaceColors(
     mutedText: '#666666',
     bodyText: '#1C1B1F',
     filterIdle: mixHex(primary, '#FFFFFF', 0.82),
+    filterIdleText: accent,
     photoPlaceholder: '#EEEEEE',
     sheet: 'rgba(255,255,255,0.98)',
     noteText: '#222222',
   };
 }
+

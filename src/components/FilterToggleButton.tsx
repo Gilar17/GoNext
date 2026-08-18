@@ -21,7 +21,7 @@ export function FilterToggleButton({
   onPress,
 }: FilterToggleButtonProps) {
   const { surfaces, primary } = useAppTheme();
-  const color = active ? UI.onPrimary : primary;
+  const color = active ? UI.onPrimary : surfaces.filterIdleText;
 
   return (
     <Pressable

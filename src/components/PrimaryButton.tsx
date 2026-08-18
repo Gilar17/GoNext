@@ -37,7 +37,7 @@ export function PrimaryButton({
     buttonColor ??
     (active === false ? surfaces.filterIdle : primary);
   const resolvedTextColor =
-    textColor ?? (active === false ? primary : UI.onPrimary);
+    textColor ?? (active === false ? surfaces.filterIdleText : UI.onPrimary);
 
   return (
     <Button

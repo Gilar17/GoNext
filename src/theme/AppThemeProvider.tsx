@@ -14,13 +14,14 @@ import {
   MD3LightTheme,
   type MD3Theme,
 } from 'react-native-paper';
-import { UI } from '@/src/theme/ui';
 import {
   DEFAULT_PRIMARY,
+  getOnColor,
   isPrimaryColor,
 } from '@/src/theme/primaryColors';
 import {
   getSurfaceColors,
+  getAccentColor,
   type ColorSchemeName,
   type SurfaceColors,
 } from '@/src/theme/surfaces';
@@ -36,6 +37,8 @@ type AppThemeContextValue = {
   setColorScheme: (scheme: ColorSchemeName) => void;
   primary: string;
   setPrimary: (color: string) => void;
+  /** Контрастный акцент для текста и иконок на фоне темы. */
+  accent: string;
   showBackgroundImage: boolean;
   setShowBackgroundImage: (value: boolean) => void;
   paperTheme: MD3Theme;
@@ -55,14 +58,22 @@ function getSettingsPath(): string | null {
   return `${base}appearance.json`;
 }
 
-function getPaperTheme(scheme: ColorSchemeName, primary: string): MD3Theme {
+function getPaperTheme(
+  scheme: ColorSchemeName,
+  primary: string,
+  accent: string,
+): MD3Theme {
   const base = scheme === 'dark' ? MD3DarkTheme : MD3LightTheme;
   return {
     ...base,
     colors: {
       ...base.colors,
-      primary,
-      onPrimary: UI.onPrimary,
+      primary: accent,
+      onPrimary: getOnColor(accent),
+      primaryContainer: primary,
+      onPrimaryContainer: getOnColor(primary),
+      onSurface: scheme === 'dark' ? '#E6E1E5' : base.colors.onSurface,
+      onSurfaceVariant: scheme === 'dark' ? '#B0AAB8' : base.colors.onSurfaceVariant,
     },
   };
 }
@@ -181,6 +192,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     setShowBackgroundImageState(value);
   }, []);
 
+  const accent = getAccentColor(colorScheme, primary);
   const value = useMemo<AppThemeContextValue>(
     () => ({
       ready,
@@ -188,10 +200,11 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
       setColorScheme,
       primary,
       setPrimary,
+      accent,
       showBackgroundImage,
       setShowBackgroundImage,
-      paperTheme: getPaperTheme(colorScheme, primary),
-      surfaces: getSurfaceColors(colorScheme, primary),
+      paperTheme: getPaperTheme(colorScheme, primary, accent),
+      surfaces: getSurfaceColors(colorScheme, primary, accent),
     }),
     [
       ready,
@@ -199,6 +212,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
       setColorScheme,
       primary,
       setPrimary,
+      accent,
       showBackgroundImage,
       setShowBackgroundImage,
     ],

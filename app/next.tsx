@@ -236,7 +236,7 @@ export default function NextPlaceScreen() {
                   mode="outlined"
                   icon={tripIcon('map-marker')}
                   onPress={() => void handleOpenMap()}
-                  textColor={accent.primary}
+                  textColor={accent.fg}
                   theme={tripButtonTheme}
                   style={[tripOutlineButtonStyle, accent.outline]}
                   contentStyle={tripButtonContentStyle}
@@ -248,7 +248,7 @@ export default function NextPlaceScreen() {
                   mode="contained"
                   icon={tripIcon('navigation-variant')}
                   onPress={() => void handleOpenNavigator()}
-                  buttonColor={accent.primary}
+                  buttonColor={accent.fill}
                   textColor={UI.onPrimary}
                   theme={tripButtonTheme}
                   style={[tripFilledButtonStyle, accent.filled]}

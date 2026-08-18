@@ -43,6 +43,71 @@ function toHex(r: number, g: number, b: number): string {
     .join('')}`;
 }
 
+function channelLuminance(value: number): number {
+  const channel = value / 255;
+  return channel <= 0.03928
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
+export function relativeLuminance(hex: string): number {
+  const rgb = parseHex(hex);
+  if (!rgb) {
+    return 0;
+  }
+  return (
+    0.2126 * channelLuminance(rgb[0]) +
+    0.7152 * channelLuminance(rgb[1]) +
+    0.0722 * channelLuminance(rgb[2])
+  );
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const lighter = Math.max(relativeLuminance(a), relativeLuminance(b));
+  const darker = Math.min(relativeLuminance(a), relativeLuminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Белый или тёмный текст/иконка на заданной заливке. */
+export function getOnColor(background: string, minRatio = 4.5): string {
+  if (contrastRatio('#FFFFFF', background) >= minRatio) {
+    return '#FFFFFF';
+  }
+  return '#1C1B1F';
+}
+
+/**
+ * Подбирает читаемый акцентный цвет на заданном фоне.
+ * Если исходный primary уже даёт нужный контраст — возвращает его без изменений.
+ */
+export function getForegroundAccent(
+  color: string,
+  background: string,
+  minRatio = 4.5,
+): string {
+  if (contrastRatio(color, background) >= minRatio) {
+    return color;
+  }
+
+  const toward = relativeLuminance(background) > 0.5 ? '#000000' : '#FFFFFF';
+  let lo = 0;
+  let hi = 1;
+  let best = mixHex(color, toward, 1);
+
+  for (let i = 0; i < 14; i += 1) {
+    const mid = (lo + hi) / 2;
+    const candidate = mixHex(color, toward, mid);
+    if (contrastRatio(candidate, background) >= minRatio) {
+      best = candidate;
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+
+  return best;
+}
+
 /** t = 0 → a, t = 1 → b */
 export function mixHex(a: string, b: string, t: number): string {
   const from = parseHex(a);

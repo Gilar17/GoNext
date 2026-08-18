@@ -135,7 +135,7 @@ export function TripPlaceNotesSection({
               mode="outlined"
               icon={tripIcon('pencil')}
               onPress={openEdit}
-              textColor={primary}
+              textColor={accent.fg}
               theme={tripButtonTheme}
               style={[styles.actionButton, accent.outline]}
               contentStyle={tripButtonContentStyle}
@@ -147,7 +147,7 @@ export function TripPlaceNotesSection({
               mode="outlined"
               icon={tripIcon('delete')}
               onPress={() => setDeleteVisible(true)}
-              textColor={primary}
+              textColor={accent.fg}
               theme={tripButtonTheme}
               style={[styles.actionButton, accent.outline]}
               contentStyle={tripButtonContentStyle}
@@ -162,7 +162,7 @@ export function TripPlaceNotesSection({
           mode="outlined"
           icon={tripIcon('plus')}
           onPress={openCreate}
-          textColor={primary}
+          textColor={accent.fg}
           theme={tripButtonTheme}
           style={[styles.addButton, accent.outline]}
           contentStyle={tripButtonContentStyle}
@@ -245,11 +245,11 @@ export function TripPlaceNotesSection({
                 mode="outlined"
                 onPress={closeEditor}
                 disabled={saving}
-                textColor={primary}
+                textColor={accent.fg}
                 theme={tripButtonTheme}
-                style={[styles.sheetButton, styles.cancelButton]}
+                style={[styles.sheetButton, styles.cancelButton, accent.outline]}
                 contentStyle={tripButtonContentStyle}
-                labelStyle={tripOutlineLabelStyle}
+                labelStyle={[tripOutlineLabelStyle, accent.label]}
               >
                 {t('common.cancel')}
               </Button>
@@ -269,7 +269,7 @@ export function TripPlaceNotesSection({
           </Dialog.Content>
           <Dialog.Actions>
             <Button
-              textColor={primary}
+              textColor={accent.fg}
               onPress={() => setDeleteVisible(false)}
             >
               {t('common.cancel')}

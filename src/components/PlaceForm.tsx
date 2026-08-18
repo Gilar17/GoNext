@@ -84,7 +84,7 @@ export function PlaceForm({
   const [locationLoading, setLocationLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewPhoto | null>(null);
   const theme = useTheme();
-  const { surfaces, primary } = useAppTheme();
+  const { surfaces, primary, accent } = useAppTheme();
 
   const ddInvalid = !isValidDdPair(values.dd);
 
@@ -250,11 +250,11 @@ export function PlaceForm({
                 icon="crosshairs-gps"
                 onPress={fillCurrentLocation}
                 loading={locationLoading}
-                textColor={primary}
+                textColor={accent}
                 style={[
                   styles.field,
                   styles.outlineButton,
-                  { borderColor: primary },
+                  { borderColor: accent },
                 ]}
                 contentStyle={primaryButtonContentStyle}
               >
@@ -280,11 +280,11 @@ export function PlaceForm({
                 mode="outlined"
                 icon="image-plus"
                 onPress={pickPhotos}
-                textColor={primary}
+                textColor={accent}
                 style={[
                   styles.outlineButton,
                   styles.photoActionButton,
-                  { borderColor: primary },
+                  { borderColor: accent },
                 ]}
                 contentStyle={primaryButtonContentStyle}
               >
@@ -294,11 +294,11 @@ export function PlaceForm({
                 mode="outlined"
                 icon="camera"
                 onPress={takePhoto}
-                textColor={primary}
+                textColor={accent}
                 style={[
                   styles.outlineButton,
                   styles.photoActionButton,
-                  { borderColor: primary },
+                  { borderColor: accent },
                 ]}
                 contentStyle={primaryButtonContentStyle}
               >
@@ -310,11 +310,11 @@ export function PlaceForm({
               mode="outlined"
               icon="image-plus"
               onPress={pickPhotos}
-              textColor={primary}
+              textColor={accent}
               style={[
                 styles.field,
                 styles.outlineButton,
-                { borderColor: primary },
+                { borderColor: accent },
               ]}
               contentStyle={primaryButtonContentStyle}
             >
